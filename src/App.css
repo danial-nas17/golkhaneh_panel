@@ -1,0 +1,62 @@
+@font-face {
+  font-family: "MyCustomFont";
+  src: url("./font/MyCustomFont.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+}
+
+body,
+html {
+  font-family: "MyCustomFont", sans-serif !important;
+}
+
+/* If using a CSS file */
+.custom-font-table .ant-table {
+  font-family: 'MyCustomFont', sans-serif !important; /* Replace with your main font */
+}
+
+/* Target all text in the table */
+.custom-font-table .ant-table,
+.custom-font-table .ant-table-thead > tr > th,
+.custom-font-table .ant-table-tbody > tr > td {
+  font-family: 'MyCustomFont', sans-serif !important;
+}
+
+.ant-table {
+  font-family: "MyCustomFont", sans-serif !important;
+}
+
+.ant-table-thead > tr > th {
+  font-family: "MyCustomFont", sans-serif !important;
+}
+
+.ant-table-tbody > tr > td {
+  font-family: "MyCustomFont", sans-serif !important;
+}
+
+/* Custom scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px; /* Width of the scrollbar */
+}
+
+::-webkit-scrollbar-track {
+  background: transparent; /* Transparent track */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888; /* Color of the scrollbar thumb */
+  border-radius: 4px; /* Rounded corners */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555; /* Color of the scrollbar thumb on hover */
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-thumb {
+  background: #555; /* Dark mode scrollbar thumb color */
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #777; /* Dark mode scrollbar thumb hover color */
+}

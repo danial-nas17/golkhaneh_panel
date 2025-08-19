@@ -1,0 +1,56 @@
+
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* @import 'antd/dist/antd.css'; */
+
+
+
+@font-face {
+  font-family: 'MyCustomFont';
+  src:local('MyCustomFont')
+   url('./font/MyCustomFont.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* If using a CSS file */
+.custom-font-table .ant-table {
+  font-family: 'MyCustomFont', sans-serif !important; /* Replace with your main font */
+}
+
+/* Target all text in the table */
+.custom-font-table .ant-table,
+.custom-font-table .ant-table-thead > tr > th,
+.custom-font-table .ant-table-tbody > tr > td {
+  font-family: 'MyCustomFont', sans-serif !important;
+}
+
+.ant-table {
+  font-family: "MyCustomFont", sans-serif !important;
+}
+
+.ant-table-thead > tr > th {
+  font-family: "MyCustomFont", sans-serif !important;
+}
+
+.ant-table-tbody > tr > td {
+  font-family: "MyCustomFont", sans-serif !important;
+}
+
+
+
+body {
+  margin: 0;
+  font-family: 'MyCustomFont', 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}

@@ -1,0 +1,38 @@
+@font-face {
+  font-family: "MyCustomFont";
+  src: url("./font/MyCustomFont.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+}
+
+body,
+html {
+  font-family: "MyCustomFont", sans-serif !important;
+}
+
+* {
+  font-family: "MyCustomFont";
+}
+
+/* If using a CSS file */
+.custom-font-table .ant-table {
+  font-family: 'MyCustomFont', sans-serif !important; /* Replace with your main font */
+}
+
+/* Target all text in the table */
+.custom-font-table .ant-table,
+.custom-font-table .ant-table-thead > tr > th,
+.custom-font-table .ant-table-tbody > tr > td {
+  font-family: 'MyCustomFont', sans-serif !important;
+}
+
+
+.ant-table {
+  font-family: 'MyCustomFont',  sans-serif !important;
+}
+
+.ant-table-thead > tr > th {
+  font-family: 'MyCustomFont',  sans-serif !important;}
+
+.ant-table-tbody > tr > td {
+  font-family: 'MyCustomFont',  sans-serif !important;}
