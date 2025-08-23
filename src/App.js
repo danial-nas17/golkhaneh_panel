@@ -76,6 +76,7 @@ import EditFilter from "./pages/filter/EditFilter";
 import GlobalPropertyIndex from "./pages/globalProperty/GlobalPropertyIndex";
 import AddGlobalProperty from "./pages/globalProperty/AddGlobalProperty";
 import EditGlobalProperty from "./pages/globalProperty/EditGlobalProperty";
+import ManualOrderPanel from "./components/orders/ManualOder";
 
 function App() {
   return (
@@ -115,12 +116,12 @@ function App() {
 
               
 
-              <Route path="/categories" element={<CategoryIndex />} />
+              {/* <Route path="/categories" element={<CategoryIndex />} />
               <Route path="/categories/add" element={<AddCategoryPage />} />
               <Route
                 path="/categories/edit/:id"
                 element={<EditCategoryPage />}
-              />
+              /> */}
 
               <Route path="/users" element={<UsersPage />} />
               {/* <Route path="/users/add" element={<UserForm />} />
@@ -132,17 +133,17 @@ function App() {
 
               <Route path="/attributes" element={<AttributesPage />} />
 
-              <Route path="/brands" element={<BrandIndex />} />
+              {/* <Route path="/brands" element={<BrandIndex />} />
               <Route path="/brands/add" element={<AddBrand />} /> 
-              <Route path="/brands/edit/:id" element={<EditBrand />} />
+              <Route path="/brands/edit/:id" element={<EditBrand />} /> */}
 
-              <Route path="/blogs" element={<BlogIndexPage />} />
+              {/* <Route path="/blogs" element={<BlogIndexPage />} />
               <Route path="/blogs/add" element={<AddBlogPage />} />
               <Route path="/blogs/edit/:id" element={<EditBlogPage />} />
 
               <Route path="/blog-categories" element={<CategoryBlogIndex />} />
               <Route path="/blog-categories/add" element={<AddCategoryBlogPage />} />
-              <Route path="/blog-categories/edit/:id" element={<EditCategoryBlogPage />} />
+              <Route path="/blog-categories/edit/:id" element={<EditCategoryBlogPage />} /> */}
 
 
               
@@ -151,16 +152,18 @@ function App() {
 
               <Route path="/orders" element={<OrderList />} />
               <Route path="/orders/:id" element={<OrderDetail />} />
+              <Route path="/orders/manual" element={<ManualOrderPanel />} />
+
 
               <Route path="/subscription" element={<SubscriptionPage />} />
 
-              <Route path="/career" element={<Carriers />} />
+              {/* <Route path="/career" element={<Carriers />} />
               <Route path="/carriers/add" element={<AddEditCarrier />} />
-              <Route path="/carriers/edit/:id" element={<AddEditCarrier />} />
+              <Route path="/carriers/edit/:id" element={<AddEditCarrier />} /> */}
 
               
 
-              <Route path="/comments" element={<CommentsPage />} />
+              {/* <Route path="/comments" element={<CommentsPage />} /> */}
 
               <Route path="/tickets" element={<TicketsIndex />} />
 
@@ -170,21 +173,21 @@ function App() {
               <Route path="/faq/plan/add" element={<FaqCreate />} />
               <Route path="/faq/plan/edit/:id" element={<FaqEdit />} />
 
-              <Route path="/discounts" element={<DiscountsIndex />} />
+              {/* <Route path="/discounts" element={<DiscountsIndex />} />
               <Route path="/discounts/add" element={<AddDiscount />} />
-              <Route path="/discounts/edit/:id" element={<EditDiscount />} />
+              <Route path="/discounts/edit/:id" element={<EditDiscount />} /> */}
 
-              <Route path="/campaigns" element={<CampaignIndex />} />
+              {/* <Route path="/campaigns" element={<CampaignIndex />} />
               <Route path="/campaigns/add" element={<AddCampaign />} />
-              <Route path="/campaigns/edit/:id" element={<EditCampaign />} />
+              <Route path="/campaigns/edit/:id" element={<EditCampaign />} /> */}
 
-              <Route path="/filters" element={<FilterIndex />} />
+              {/* <Route path="/filters" element={<FilterIndex />} />
               <Route path="/filters/add" element={<AddFilter />} />
-              <Route path="/filters/edit/:id" element={<EditFilter />} />
+              <Route path="/filters/edit/:id" element={<EditFilter />} /> */}
 
-              <Route path="/global-properties" element={<GlobalPropertyIndex />} />
+              {/* <Route path="/global-properties" element={<GlobalPropertyIndex />} />
               <Route path="/global-properties/add" element={<AddGlobalProperty />} />
-              <Route path="/global-properties/edit/:id" element={<EditGlobalProperty />} />
+              <Route path="/global-properties/edit/:id" element={<EditGlobalProperty />} /> */}
 
              
 
@@ -199,7 +202,7 @@ function App() {
               <Route path="/unread_notifications" element={<UnreadNotificationsPage />} />
 
 
-              <Route path="/gallery" element={<MediaGallery />} />
+              {/* <Route path="/gallery" element={<MediaGallery />} /> */}
 
 
 
