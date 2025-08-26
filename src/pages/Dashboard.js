@@ -222,7 +222,7 @@ const Dashboard = () => {
         </Col>
 
 
-        <Col xs={24} lg={8}>
+        {/* <Col xs={24} lg={8}>
           <Card title="فروش بر اساس دسته‌بندی">
             <ResponsiveContainer width="100%" height={300}>
               {dashboardData?.category_sales &&
@@ -261,7 +261,7 @@ const Dashboard = () => {
               )}
             </ResponsiveContainer>
           </Card>
-        </Col>
+        </Col> */}
 
 
 

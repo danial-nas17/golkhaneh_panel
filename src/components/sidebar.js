@@ -1,3 +1,4 @@
+// Updated Sidebar.js
 import React from "react";
 import { Layout, Menu, Avatar, Button, Image } from "antd";
 import "../App.css";
@@ -29,10 +30,14 @@ import {
 import { useTheme } from "../contexts/ThemeContext";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { getCurrentUser, logout } from "../services/auth";
-import logo from "../images/headerlogo.png";
+import logo from "../images/1.svg";
 
 const { Sider } = Layout;
 const { SubMenu } = Menu;
+
+// Brand colors
+const BRAND_DARK = "#223931"; // Dark green
+const BRAND_PURPLE = "#582262"; // Purple
 
 const Sidebar = ({ showModal, isMobile, onCloseMobile }) => {
   const { isDarkMode } = useTheme();
@@ -52,28 +57,96 @@ const Sidebar = ({ showModal, isMobile, onCloseMobile }) => {
     navigate("/login");
   };
 
+  // Updated styles with brand colors
+  const sidebarStyle = {
+    background: isDarkMode 
+      ? `linear-gradient(180deg, ${BRAND_DARK} 0%, #1a2a23 100%)` 
+      : `linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)`,
+    borderRight: `2px solid ${isDarkMode ? BRAND_DARK : '#e2e8f0'}`,
+    boxShadow: isDarkMode 
+      ? '4px 0 12px rgba(0, 0, 0, 0.3)' 
+      : `4px 0 12px ${BRAND_DARK}20`,
+  };
+
+  const logoContainerStyle = {
+    background: isDarkMode
+      ? `linear-gradient(135deg, ${BRAND_DARK}, #2a4538)`
+      : `linear-gradient(135deg, #d1c2dd, ##D1C2DD)`,
+    borderRadius: '16px',
+    margin: '16px',
+    padding: '20px',
+    border: `2px solid ${isDarkMode ? '#2a4538' : '#d1e7dd'}`,
+    boxShadow: isDarkMode
+      ? '0 4px 12px rgba(0, 0, 0, 0.2)'
+      : `0 4px 12px ${BRAND_DARK}20`,
+  };
+
+  const menuStyle = {
+    background: 'transparent',
+    border: 'none',
+  };
+
   return (
     <Sider
       width={250}
       theme={isDarkMode ? "dark" : "light"}
       className={`h-screen ${isMobile ? "relative" : "fixed"} custom-scrollbar`}
-      style={{
-        borderRight: `1px solid ${isDarkMode ? "#303030" : "#f0f0f0"}`,
-        overflowY: "auto",
-      }}
+      style={sidebarStyle}
     >
-      <div className="flex items-center justify-center flex-col p-6">
-        <img src={logo} className="w-[120px] rounded-[70px]" alt="لوگو" />
+      {/* Logo Container with updated styling */}
+      <div className="flex items-center justify-center flex-col" style={logoContainerStyle}>
+        <div className="relative">
+          <img 
+            src={logo} 
+            className="w-[100px] h-[100px] rounded-full object-cover" 
+            alt="لوگو"
+            style={{
+              border: `3px solid ${isDarkMode ? BRAND_PURPLE : BRAND_PURPLE}`,
+              boxShadow: `0 4px 16px ${BRAND_PURPLE}40`,
+            }}
+          />
+          {/* Purple dot indicator */}
+          <div 
+            className="absolute -top-1 -right-1 w-6 h-6 rounded-full border-2 border-white"
+            style={{
+              background: `linear-gradient(135deg, ${BRAND_PURPLE}, #6a2c7a)`,
+              animation: 'pulse 2s infinite',
+            }}
+          />
+        </div>
+        <div className={`mt-3 text-center ${isDarkMode ? 'text-purple-300' : 'text-purple-700'}`}>
+          <div className="text-sm font-semibold">گلخانه هوشمند</div>
+          <div className="text-xs opacity-75">مدیریت پیشرفته</div>
+        </div>
       </div>
 
-      <div style={{ overflowY: "auto", maxHeight: "calc(100vh - 200px)" }}>
+      <div 
+        style={{ 
+          overflowY: "auto", 
+          maxHeight: "calc(100vh - 200px)",
+          paddingRight: '4px'
+        }}
+        className="custom-scrollbar"
+      >
         <Menu
           theme={isDarkMode ? "dark" : "light"}
           mode="inline"
           selectedKeys={[location.pathname]}
-          defaultOpenKeys={["صفحه-اصلی", "محصول", "سفارشات"]}
+          defaultOpenKeys={["product", "orders"]}
+          style={menuStyle}
+          className="border-none greenhouse-menu"
         >
-          <Menu.Item key="/" icon={<DashboardOutlined />}>
+          <Menu.Item 
+            key="/" 
+            icon={<DashboardOutlined />}
+            className="menu-item-greenhouse"
+            style={{
+              margin: '4px 8px',
+              borderRadius: '8px',
+              height: '40px',
+              lineHeight: '40px',
+            }}
+          >
             <Link to="/">داشبورد</Link>
           </Menu.Item>
 
@@ -81,142 +154,204 @@ const Sidebar = ({ showModal, isMobile, onCloseMobile }) => {
             key="product"
             icon={<ShoppingCartOutlined />}
             title="محصولات"
+            className="submenu-greenhouse"
+            style={{
+              margin: '4px 8px',
+              borderRadius: '8px',
+            }}
           >
-            <Menu.Item key="/products" icon={<ShoppingCartOutlined />}>
+            <Menu.Item 
+              key="/products" 
+              icon={<ShoppingCartOutlined />}
+              style={{ margin: '2px 4px', borderRadius: '6px' }}
+            >
               <Link to="/products">محصولات</Link>
             </Menu.Item>
-            <Menu.Item key="/productsVariation" icon={<ShoppingCartOutlined />}>
+            <Menu.Item 
+              key="/productsVariation" 
+              icon={<ShoppingCartOutlined />}
+              style={{ margin: '2px 4px', borderRadius: '6px' }}
+            >
               <Link to="/productsVariation">تنوع محصولات</Link>
             </Menu.Item>
-            <Menu.Item key="/category" icon={<ProductOutlined />}>
-              <Link to="/categories">دسته‌بندی</Link>
-            </Menu.Item>
-            <Menu.Item key="/brands" icon={<ProductOutlined />}>
-              <Link to="/brands">برند</Link>
-            </Menu.Item>
-            <Menu.Item key="/attributes" icon={<ProductOutlined />}>
+            <Menu.Item 
+              key="/attributes" 
+              icon={<ProductOutlined />}
+              style={{ margin: '2px 4px', borderRadius: '6px' }}
+            >
               <Link to="/attributes">ویژگی‌ها</Link>
             </Menu.Item>
-            <Menu.Item key="/filters" icon={<ProductOutlined />}>
-              <Link to="/filters">فیلترها</Link>
-            </Menu.Item>
-            <Menu.Item key="/global-properties" icon={<ProductOutlined />}>
-              <Link to="/global-properties">مشخصات فنی</Link>
-            </Menu.Item>
           </SubMenu>
 
-          <SubMenu key="orders" icon={<ShoppingCartOutlined />} title="سفارشات">
-            <Menu.Item key="/orders" icon={<ShoppingCartOutlined />}>
+          <SubMenu 
+            key="orders" 
+            icon={<ShoppingCartOutlined />} 
+            title="سفارشات"
+            style={{
+              margin: '4px 8px',
+              borderRadius: '8px',
+            }}
+          >
+            <Menu.Item 
+              key="/orders" 
+              icon={<ShoppingCartOutlined />}
+              style={{ margin: '2px 4px', borderRadius: '6px' }}
+            >
               <Link to="/orders">سفارشات</Link>
             </Menu.Item>
+            <Menu.Item 
+              key="/orders" 
+              icon={<ShoppingCartOutlined />}
+              style={{ margin: '2px 4px', borderRadius: '6px' }}
+            >
+              <Link to="/orders/manual">سفارش دستی</Link>
+            </Menu.Item>
           </SubMenu>
 
-          <Menu.Item key="/subscription" icon={<MailOutlined />}>
+          <Menu.Item 
+            key="/subscription" 
+            icon={<MailOutlined />}
+            style={{
+              margin: '4px 8px',
+              borderRadius: '8px',
+              height: '40px',
+              lineHeight: '40px',
+            }}
+          >
             <Link to="/subscription">اشتراک‌ها</Link>
           </Menu.Item>
 
-          <Menu.Item key="/career" icon={<TruckOutlined />}>
-            <Link to="/career">حامل‌ها</Link>
-          </Menu.Item>
-
-
-          {/* <SubMenu key="notifications" icon={<BellOutlined />} title="اعلان‌ها">
-            <Menu.Item key="/notifications" icon={<BellOutlined />}>
-              <Link to="/notifications">اعلان‌ها</Link>
-            </Menu.Item>
-            <Menu.Item key="/my_notifications" icon={<BellOutlined />}>
-              <Link to="/my_notifications">اعلان‌های من</Link>
-            </Menu.Item>
-            <Menu.Item key="/unread_notifications" icon={<BellOutlined />}>
-              <Link to="/unread_notifications">اعلان‌های خوانده نشده</Link>
-            </Menu.Item>
-          </SubMenu> */}
-
-          <Menu.SubMenu key="blogs" icon={<FormOutlined />} title="وبلاگ">
-            <Menu.Item key="/blogs">
-              <Link to="/blogs">لیست وبلاگ‌ها</Link>
-            </Menu.Item>
-            <Menu.Item key="/blog-categories">
-              <Link to="/blog-categories">دسته‌بندی وبلاگ</Link>
-            </Menu.Item>
-          </Menu.SubMenu>
-
-          <Menu.SubMenu key="discounts" icon={<PercentageOutlined />} title="تخفیف‌ها">
-            <Menu.Item key="/discounts">
-              <Link to="/discounts"> کدهای تخفیف</Link>
-            </Menu.Item>
-            <Menu.Item key="/campaigns">
-              <Link to="/campaigns"> کمپین‌ها</Link>
-            </Menu.Item>
-          </Menu.SubMenu>
-
-          {/* <Menu.Item key="/gallery" icon={<PictureOutlined />}>
-            <Link to="/gallery">گالری</Link>
-          </Menu.Item> */}
-
-          {/* <Menu.Item key="/contactUs" icon={<ContactsOutlined />}>
-            <Link to="/contactUs">تماس با ما</Link>
-          </Menu.Item> */}
-
-          {/* <SubMenu key="landing" icon={<HomeOutlined />} title="صفحه اصلی">
-            <Menu.Item key="/landing/banner" icon={<PictureOutlined />}>
-              <Link to="/landing/banner">بنر</Link>
-            </Menu.Item>
-            <Menu.Item key="/landing/Faq" icon={<CommentOutlined />}>
-              <Link to="/landing/faq_list">سوالات متداول</Link>
-            </Menu.Item>
-            <Menu.Item key="/landing/content" icon={<FileTextOutlined />}>
-              <Link to="/landing/content">محتوا</Link>
-            </Menu.Item>
-            <Menu.Item key="/landing/seo" icon={<ProfileOutlined />}>
-              <Link to="/landing/seo">سئو</Link>
-            </Menu.Item>
-          </SubMenu> */}
-
-          {/* <SubMenu key="aboutUs" icon={<UserOutlined />} title="درباره ما">
-            <Menu.Item key="/aboutUs" icon={<UserOutlined />}>
-              <Link to="/aboutUS">درباره ما</Link>
-            </Menu.Item>
-
-            <Menu.Item key="/members" icon={<UserOutlined />}>
-              <Link to="/members">اعضا</Link>
-            </Menu.Item>
-          </SubMenu> */}
-
-
-          <Menu.Item key="/comments" icon={<MessageOutlined />}>
-            <Link to="/comments">نظرات</Link>
-          </Menu.Item>
-
-          <Menu.Item key="/tickets" icon={<CustomerServiceOutlined />}>
+          <Menu.Item 
+            key="/tickets" 
+            icon={<CustomerServiceOutlined />}
+            style={{
+              margin: '4px 8px',
+              borderRadius: '8px',
+              height: '40px',
+              lineHeight: '40px',
+            }}
+          >
             <Link to="/tickets">درخواست پشتیبانی</Link>
           </Menu.Item>
 
-          <Menu.Item key="/users" icon={<TeamOutlined />}>
+          <Menu.Item 
+            key="/users" 
+            icon={<TeamOutlined />}
+            style={{
+              margin: '4px 8px',
+              borderRadius: '8px',
+              height: '40px',
+              lineHeight: '40px',
+            }}
+          >
             <Link to="/users">مدیریت کاربران</Link>
           </Menu.Item>
 
-          
-
-          <Menu.Item key="/roles" icon={<UserOutlined />}>
+          <Menu.Item 
+            key="/roles" 
+            icon={<UserOutlined />}
+            style={{
+              margin: '4px 8px',
+              borderRadius: '8px',
+              height: '40px',
+              lineHeight: '40px',
+            }}
+          >
             <Link to="/roles">مدیریت نقش‌ها</Link>
           </Menu.Item>
 
-          <Menu.Item key="/setting" icon={<SettingOutlined />}>
+          <Menu.Item 
+            key="/setting" 
+            icon={<SettingOutlined />}
+            style={{
+              margin: '4px 8px',
+              borderRadius: '8px',
+              height: '40px',
+              lineHeight: '40px',
+            }}
+          >
             <Link to="/setting">تنظیمات</Link>
           </Menu.Item>
 
           <Menu.Item
-            className="text-red-600"
+            className="text-red-500 hover:text-red-600"
             danger
             key="logout"
             icon={<LogoutOutlined />}
             onClick={handleLogout}
+            style={{
+              margin: '8px',
+              borderRadius: '8px',
+              height: '40px',
+              lineHeight: '40px',
+              marginTop: '16px',
+              background: isDarkMode ? 'rgba(239, 68, 68, 0.1)' : 'rgba(254, 226, 226, 0.5)',
+              border: `1px solid ${isDarkMode ? 'rgba(239, 68, 68, 0.2)' : 'rgba(252, 165, 165, 0.3)'}`,
+            }}
           >
             خروج
           </Menu.Item>
         </Menu>
       </div>
+
+      <style jsx>{`
+        .greenhouse-menu .ant-menu-item-selected {
+          background: ${isDarkMode ? `${BRAND_PURPLE}20` : `${BRAND_PURPLE}10`} !important;
+          border-left: 3px solid ${BRAND_PURPLE} !important;
+          color: ${BRAND_PURPLE} !important;
+          font-weight: 600 !important;
+        }
+        
+        .greenhouse-menu .ant-menu-item:hover {
+          background: ${isDarkMode ? `${BRAND_PURPLE}10` : `${BRAND_PURPLE}05`} !important;
+          color: ${BRAND_PURPLE} !important;
+          transform: translateX(-2px);
+          transition: all 0.3s ease;
+        }
+        
+        .greenhouse-menu .ant-menu-submenu-selected > .ant-menu-submenu-title {
+          color: ${BRAND_PURPLE} !important;
+          background: ${isDarkMode ? `${BRAND_PURPLE}10` : `${BRAND_PURPLE}05`} !important;
+        }
+        
+        .greenhouse-menu .ant-menu-submenu:hover > .ant-menu-submenu-title {
+          color: ${BRAND_PURPLE} !important;
+        }
+        
+        .greenhouse-menu .ant-menu-submenu-open > .ant-menu-submenu-title {
+          color: ${BRAND_PURPLE} !important;
+          background: ${isDarkMode ? `${BRAND_PURPLE}10` : `${BRAND_PURPLE}05`} !important;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: ${isDarkMode ? BRAND_DARK : '#f1f5f9'};
+          border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: linear-gradient(180deg, ${BRAND_PURPLE}, #6a2c7a);
+          border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(180deg, #6a2c7a, ${BRAND_PURPLE});
+        }
+        
+        @keyframes pulse {
+          0%, 100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+          50% {
+            transform: scale(1.1);
+            opacity: 0.8;
+          }
+        }
+      `}</style>
     </Sider>
   );
 };

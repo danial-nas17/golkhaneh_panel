@@ -97,12 +97,21 @@ export const UserProvider = ({ children }) => {
       const token = localStorage.getItem("token");
       if (token) {
         const response = await axios.get(
-          "https://api.digizooom.com/api/v1/panel/user/info",
+          "https://gol.digizooom.com/api/v1/panel/user/info",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-        setUser(response.data); // Adjust if your API structure differs
+        
+        // Get permissions from localStorage
+        const permissionsStr = localStorage.getItem("permissions");
+        const permissions = permissionsStr ? JSON.parse(permissionsStr) : null;
+        
+        // Set user with permissions
+        setUser({
+          ...response.data,
+          permissions: permissions
+        });
       }
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -111,13 +120,19 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  const loginUser = (userData, token) => {
+  const loginUser = (userData, token, permissions = null) => {
     // Save token and user data to localStorage
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(userData));
+    if (permissions) {
+      localStorage.setItem("permissions", JSON.stringify(permissions));
+    }
 
     // Update the user state
-    setUser(userData);
+    setUser({
+      ...userData,
+      permissions: permissions
+    });
   };
 
   const logoutUser = () => {

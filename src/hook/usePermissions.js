@@ -1,16 +1,19 @@
 // hooks/usePermissions.js
-import { useContext } from 'react';
-import { AuthContext } from '../context/AuthContext';
+import { useUser } from '../contexts/UserContext';
 
 export const usePermissions = () => {
-  const { user } = useContext(AuthContext);
+  const { user } = useUser();
 
   const hasPermission = (requiredPermission) => {
-    if (!user || !user.permissions) return false;
+    if (!user) return false;
     
     // Super Admin check
-    if (user.permissions === '*') return true;
+    if (user.role === 'super_admin') return true;
     
+    // Check if user has permissions array
+    if (!user.permissions) return false;
+    
+    // Check if user has the required permission
     return user.permissions.includes(requiredPermission);
   };
 
@@ -26,6 +29,7 @@ export const usePermissions = () => {
     hasPermission,
     hasAnyPermission,
     hasAllPermissions,
-    userPermissions: user?.permissions || []
+    userPermissions: user?.permissions || [],
+    userRole: user?.role || null
   };
 };
