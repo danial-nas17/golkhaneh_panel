@@ -81,17 +81,17 @@ function ProductIndex() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const fetchBrands = async () => {
-    try {
-      const response = await api.get("/panel/brand", {
-        params: { per_page: 100, page: 1 },
-      });
-      setBrands(response?.data?.data || []);
-    } catch (error) {
-      console.error("خطا در دریافت برندها:", error);
-      message.error("دریافت برندها با خطا مواجه شد");
-    }
-  };
+  // const fetchBrands = async () => {
+  //   try {
+  //     const response = await api.get("/panel/brand", {
+  //       params: { per_page: 100, page: 1 },
+  //     });
+  //     setBrands(response?.data?.data || []);
+  //   } catch (error) {
+  //     console.error("خطا در دریافت برندها:", error);
+  //     message.error("دریافت برندها با خطا مواجه شد");
+  //   }
+  // };
 
   const parsePriceString = (priceString) => {
     if (typeof priceString === "number") return priceString;
@@ -426,7 +426,7 @@ function ProductIndex() {
   };
 
   useEffect(() => {
-    fetchBrands();
+    // fetchBrands();
     fetchAttributes();
     fetchProducts();
 
@@ -486,78 +486,9 @@ function ProductIndex() {
         </span>
       ),
     },
-    {
-      title: "قیمت خرید",
-      dataIndex: "buy_price",
-      key: "buy_price",
-      render: (buyPrice, record) => {
-        if (editingVariant === record.product_variant_id) {
-          return (
-            <InputNumber
-              value={editingValues.buy_price}
-              onChange={(value) =>
-                setEditingValues((prev) => ({ ...prev, buy_price: value }))
-              }
-              formatter={(value) =>
-                `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-              }
-              parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
-              style={{ width: "120px" }}
-              placeholder="قیمت خرید"
-            />
-          );
-        }
-        return `${buyPrice?.toLocaleString()} تومان`;
-      },
-    },
-    {
-      title: "قیمت",
-      dataIndex: "price",
-      key: "price",
-      render: (price, record) => {
-        if (editingVariant === record.product_variant_id) {
-          return (
-            <InputNumber
-              value={editingValues.price}
-              onChange={(value) =>
-                setEditingValues((prev) => ({ ...prev, price: value }))
-              }
-              formatter={(value) =>
-                `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-              }
-              parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
-              style={{ width: "120px" }}
-              placeholder="قیمت"
-            />
-          );
-        }
-        return `${price?.toLocaleString()} تومان`;
-      },
-    },
-    {
-      title: "قیمت تخفیف‌خورده",
-      dataIndex: "off_price",
-      key: "off_price",
-      render: (offPrice, record) => {
-        if (editingVariant === record.product_variant_id) {
-          return (
-            <InputNumber
-              value={editingValues.off_price}
-              onChange={(value) =>
-                setEditingValues((prev) => ({ ...prev, off_price: value }))
-              }
-              formatter={(value) =>
-                `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-              }
-              parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
-              style={{ width: "120px" }}
-              placeholder="قیمت تخفیف"
-            />
-          );
-        }
-        return `${offPrice} تومان`;
-      },
-    },
+   
+   
+   
     {
       title: "ترکیب ویژگی‌ها",
       dataIndex: "attribute_varitation",
@@ -609,36 +540,8 @@ function ProductIndex() {
       key: "actions",
       render: (_, record) => (
         <Space>
-          {editingVariant === record.product_variant_id ? (
-            <>
-              <Button
-                type="primary"
-                icon={<SaveOutlined />}
-                size="small"
-                loading={updateLoading[record.product_variant_id]}
-                onClick={() => handleSaveVariant(record.product_variant_id)}
-              >
-                ذخیره
-              </Button>
-              <Button
-                icon={<CloseOutlined />}
-                size="small"
-                onClick={handleCancelEdit}
-              >
-                لغو
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                type="default"
-                icon={<EditOutlined />}
-                size="small"
-                onClick={() => handleEditVariant(record)}
-                title="ویرایش سریع"
-              >
-                ویرایش سریع
-              </Button>
+         
+             
               <Button
                 type="primary"
                 icon={<EditOutlined />}
@@ -677,8 +580,6 @@ function ProductIndex() {
                   size="small"
                 />
               </Popconfirm>
-            </>
-          )}
         </Space>
       ),
     },
@@ -695,11 +596,7 @@ function ProductIndex() {
       dataIndex: "title",
       key: "title",
     },
-    {
-      title: "برند",
-      dataIndex: "brand",
-      key: "brand",
-    },
+   
     {
       title: "دسته‌بندی‌ها",
       dataIndex: "categories",
@@ -804,22 +701,8 @@ function ProductIndex() {
             className="max-w-md"
             allowClear
           />
-          <Select
-            placeholder="فیلتر بر اساس برند"
-            onChange={handleBrandChange}
-            value={searchParams.get("brand") || null}
-            allowClear
-            className="min-w-[200px]"
-            showSearch
-            filterOption={(input, option) =>
-              option.label.toLowerCase().includes(input.toLowerCase())
-            }
-            options={brands.map((brand) => ({
-              value: brand.title,
-              label: brand.title,
-            }))}
-          />
-          <Button
+          
+          {/* <Button
             icon={<FilterOutlined />}
             onClick={() => setFilterDrawerVisible(true)}
             type={
@@ -829,7 +712,7 @@ function ProductIndex() {
             فیلتر بر اساس ویژگی‌ها
             {Object.keys(attributeValues).length > 0 &&
               ` (${Object.keys(attributeValues).length})`}
-          </Button>
+          </Button> */}
         </div>
 
         <Table
@@ -871,7 +754,7 @@ function ProductIndex() {
       </div>
 
       {/* Drawer for attribute filtering */}
-      <Drawer
+      {/* <Drawer
         title="فیلتر بر اساس ویژگی‌ها"
         placement="right"
         onClose={() => setFilterDrawerVisible(false)}
@@ -930,7 +813,7 @@ function ProductIndex() {
             </Form.Item>
           ))}
         </Form>
-      </Drawer>
+      </Drawer> */}
 
       {/* Modal for displaying logs */}
       <Modal

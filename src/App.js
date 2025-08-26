@@ -116,12 +116,12 @@ function App() {
 
               
 
-              {/* <Route path="/categories" element={<CategoryIndex />} />
+              <Route path="/categories" element={<CategoryIndex />} />
               <Route path="/categories/add" element={<AddCategoryPage />} />
               <Route
                 path="/categories/edit/:id"
                 element={<EditCategoryPage />}
-              /> */}
+              />
 
               <Route path="/users" element={<UsersPage />} />
               {/* <Route path="/users/add" element={<UserForm />} />

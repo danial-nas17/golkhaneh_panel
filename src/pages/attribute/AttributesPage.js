@@ -117,7 +117,7 @@ const AttributesPage = () => {
       const formData = new FormData();
       formData.append("attribute_id", selectedAttribute.id);
       formData.append("value", values.value);
-      formData.append("order", values.order ? values.order : '' );
+      formData.append("order", values.order ? values.order : "");
       if (fileList.length > 0) {
         formData.append("file", fileList[0].originFileObj);
       }
@@ -194,39 +194,36 @@ const AttributesPage = () => {
       dataIndex: "order",
       key: "order",
     },
-
     {
       title: "نوع",
       dataIndex: "type",
       key: "type",
-      render: (type) => (type === 'product' ? 'محصول' : 'تنوع'),
+      render: (type) => (type === "product" ? "محصول" : "تنوع"),
     },
     {
       title: "عملیات",
       key: "actions",
       render: (_, record) => (
-        <div className="space-x-2">
-          <Space>
-            <Button
-              type="primary"
-              icon={<EditOutlined />}
-              onClick={() => {
-                setSelectedAttribute(record);
-                form.setFieldsValue({
-                  ...record,
-                  type: record.type || "product",
-                });
-                setAttributeModal(true);
-              }}
-            />
-            <Popconfirm
-              title="آیا از حذف این ویژگی اطمینان دارید؟"
-              onConfirm={() => handleDeleteAttribute(record.id)}
-            >
-              <Button type="primary" danger icon={<DeleteOutlined />} />
-            </Popconfirm>
-          </Space>
-        </div>
+        <Space>
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => {
+              setSelectedAttribute(record);
+              form.setFieldsValue({
+                ...record,
+                type: record.type || "product",
+              });
+              setAttributeModal(true);
+            }}
+          />
+          <Popconfirm
+            title="آیا از حذف این ویژگی اطمینان دارید؟"
+            onConfirm={() => handleDeleteAttribute(record.id)}
+          >
+            <Button type="primary" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </Space>
       ),
     },
   ];
@@ -252,7 +249,7 @@ const AttributesPage = () => {
       title: "تصویر",
       dataIndex: "image",
       key: "image",
-      render: (icon) => 
+      render: (icon) =>
         icon ? (
           <Image src={icon} alt="تصویر دسته‌بندی" width={100} preview={false} />
         ) : (
@@ -263,28 +260,26 @@ const AttributesPage = () => {
       title: "عملیات",
       key: "actions",
       render: (_, record) => (
-        <div className="space-x-2">
-          <Space>
-            <Button
-              type="primary"
-              icon={<EditOutlined />}
-              onClick={() => {
-                valueForm.setFieldsValue({
-                  id: record.id,
-                  value: record.value,
-                  order: record.order,
-                });
-                setValueModal(true);
-              }}
-            />
-            <Popconfirm
-              title="آیا از حذف این مقدار اطمینان دارید؟"
-              onConfirm={() => handleDeleteValue(record.id)}
-            >
-              <Button type="primary" danger icon={<DeleteOutlined />} />
-            </Popconfirm>
-          </Space>
-        </div>
+        <Space>
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => {
+              valueForm.setFieldsValue({
+                id: record.id,
+                value: record.value,
+                order: record.order,
+              });
+              setValueModal(true);
+            }}
+          />
+          <Popconfirm
+            title="آیا از حذف این مقدار اطمینان دارید؟"
+            onConfirm={() => handleDeleteValue(record.id)}
+          >
+            <Button type="primary" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </Space>
       ),
     },
   ];
@@ -312,8 +307,11 @@ const AttributesPage = () => {
   return (
     <Card>
       <div className="p-2">
-        <div className="mb-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">مدیریت ویژگی‌ها</h1>
+        {/* هدر و دکمه افزودن ویژگی */}
+        <div className="mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-bold text-center sm:text-left">
+            مدیریت ویژگی‌ها
+          </h1>
           <Button
             type="primary"
             icon={<PlusOutlined />}
@@ -322,30 +320,38 @@ const AttributesPage = () => {
               form.resetFields();
               setAttributeModal(true);
             }}
+            className="w-full sm:w-auto"
           >
             افزودن ویژگی
           </Button>
         </div>
 
         <Tabs defaultActiveKey="attributes">
+          {/* تب ویژگی‌ها */}
           <TabPane tab="ویژگی‌ها" key="attributes">
             <Table
               columns={attributeColumns}
               dataSource={attributes}
               loading={loading}
               rowKey="id"
+              scroll={{ x: "max-content" }}
+              pagination={{ responsive: true }}
             />
           </TabPane>
+
+          {/* تب مقادیر */}
           <TabPane tab="مقادیر" key="values">
-            <div className="mb-4 flex justify-between items-center">
+            <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-2">
               <Select
-                className="w-64"
+                className="w-full sm:w-64"
                 placeholder="انتخاب یک ویژگی"
                 onChange={handleAttributeChange}
                 value={selectedAttribute?.id}
                 showSearch
                 filterOption={(input, option) =>
-                  option?.children?.toLowerCase().includes(input.toLowerCase())
+                  option?.children
+                    ?.toLowerCase()
+                    .includes(input.toLowerCase())
                 }
               >
                 {attributes.map((attr) => (
@@ -362,6 +368,7 @@ const AttributesPage = () => {
                     valueForm.resetFields();
                     setValueModal(true);
                   }}
+                  className="w-full sm:w-auto"
                 >
                   افزودن مقدار
                 </Button>
@@ -382,12 +389,15 @@ const AttributesPage = () => {
                   dataSource={selectedAttributeValues}
                   loading={valuesLoading}
                   rowKey="id"
+                  scroll={{ x: "max-content" }}
+                  pagination={{ responsive: true }}
                 />
               </>
             )}
           </TabPane>
         </Tabs>
 
+        {/* مودال ویژگی */}
         <Modal
           title={selectedAttribute ? "ویرایش ویژگی" : "افزودن ویژگی"}
           open={attributeModal}
@@ -408,14 +418,9 @@ const AttributesPage = () => {
             >
               <Input />
             </Form.Item>
-            <Form.Item
-              name="order"
-              label="ترتیب"
-              // rules={[{ required: true, message: "لطفاً ترتیب را وارد کنید!" }]}
-            >
+            <Form.Item name="order" label="ترتیب">
               <Input type="number" />
             </Form.Item>
-
             <Form.Item
               name="type"
               label="نوع"
@@ -429,6 +434,7 @@ const AttributesPage = () => {
           </Form>
         </Modal>
 
+        {/* مودال مقدار */}
         <Modal
           title="افزودن/ویرایش مقدار"
           open={valueModal}
@@ -445,7 +451,6 @@ const AttributesPage = () => {
             <Form.Item name="id" hidden>
               <Input />
             </Form.Item>
-
             <Form.Item
               name="value"
               label="مقدار"
@@ -453,11 +458,7 @@ const AttributesPage = () => {
             >
               <Input />
             </Form.Item>
-            <Form.Item
-              name="order"
-              label="ترتیب"
-              // rules={[{ required: true, message: "لطفاً ترتیب را وارد کنید!" }]}
-            >
+            <Form.Item name="order" label="ترتیب">
               <Input type="number" />
             </Form.Item>
             <Form.Item label="فایل">

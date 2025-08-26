@@ -127,17 +127,15 @@ function EditVariationProduct() {
   const fetchInitialData = async () => {
     setFetchingData(true);
     try {
-      const [categoriesRes, brandsRes, attributesRes, productsRes, variantRes] =
+      const [categoriesRes, attributesRes, productsRes, variantRes] =
         await Promise.all([
           api.get(`/panel/category`),
-          api.get(`/panel/brand`),
           api.get(`/panel/attribute?includes[]=values&type=variant`),
           api.get(`/panel/product?per_page=100`),
           api.get(`/panel/product-variation/${id}`),
         ]);
 
       setCategories(categoriesRes?.data?.data || []);
-      setBrands(brandsRes?.data?.data || []);
       setAttributes(attributesRes?.data?.data || []);
       setProducts(productsRes?.data?.data || []);
 
@@ -192,9 +190,9 @@ function EditVariationProduct() {
       // تنظیم مقادیر اولیه form
       const initialValues = {
         product_id: variantData?.product_variant_id, // استفاده از product_variant_id به جای id
-        buy_price: variantData?.buy_price?.replace(/[^0-9.]/g, ""), // اضافه شده
-        price: variantData?.price?.replace(/[^0-9.]/g, ""),
-        off_price: variantData?.off_price?.replace(/[^0-9.]/g, ""),
+        // buy_price: variantData?.buy_price?.replace(/[^0-9.]/g, ""), // اضافه شده
+        // price: variantData?.price?.replace(/[^0-9.]/g, ""),
+        // off_price: variantData?.off_price?.replace(/[^0-9.]/g, ""),
         sku: variantData?.SKU,
         upc: variantData?.UPC,
         stock: variantData?.stock,
@@ -254,9 +252,9 @@ function EditVariationProduct() {
       };
 
       const basicFields = [
-        "buy_price",
-        "price",
-        "off_price",
+        // "buy_price",
+        // "price",
+        // "off_price",
         "sku",
         "upc",
         "stock",
@@ -427,7 +425,7 @@ function EditVariationProduct() {
             </Card>
           )}
          
-          <Row gutter={16}>
+          {/* <Row gutter={16}>
             <Col span={8}>
               <Form.Item
                 name="buy_price"
@@ -485,10 +483,10 @@ function EditVariationProduct() {
                 />
               </Form.Item>
             </Col>
-          </Row>
+          </Row> */}
           <Row gutter={24}>
             <Col span={12}>
-              <Form.Item name="upc" label="کد جهانی محصول">
+              <Form.Item name="upc" label="کد محصول">
                 <Input />
               </Form.Item>
             </Col>
@@ -508,7 +506,7 @@ function EditVariationProduct() {
           <Form.Item name="active" label="فعال" valuePropName="checked">
             <Switch />
           </Form.Item>
-          <Form.Item label="Images">
+          <Form.Item label="تصاویر">
             <div className="mb-4 flex flex-wrap gap-4">
               {/* Existing Images */}
               {currentImages.map((image, index) => (
@@ -552,7 +550,7 @@ function EditVariationProduct() {
             </div>
 
             <Upload {...uploadProps}>
-              <Button icon={<UploadOutlined />}>Add Images</Button>
+              <Button icon={<UploadOutlined />}>افزودن تصاویر </Button>
             </Upload>
           </Form.Item>
           <Form.Item>

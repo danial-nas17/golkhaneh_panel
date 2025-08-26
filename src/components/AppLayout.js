@@ -1,4 +1,3 @@
-// Updated AppLayout.js
 import React, { useState } from "react";
 import { Layout, Button, Modal, Form, Input, message, Switch, Spin } from "antd";
 import { LogoutOutlined, BulbOutlined, MenuOutlined } from "@ant-design/icons";
@@ -10,10 +9,6 @@ import { useTheme } from "../contexts/ThemeContext";
 import Sidebar from "./sidebar";
 
 const { Header, Content } = Layout;
-
-// Brand colors
-const BRAND_DARK = "#223931"; // Dark green
-const BRAND_PURPLE = "#582262"; // Purple
 
 const AppLayout = () => {
   const navigate = useNavigate();
@@ -56,39 +51,39 @@ const AppLayout = () => {
     );
   }
 
-  // Updated theme configuration with brand colors
+  // Greenhouse color theme
   const themeConfig = {
     token: {
-      colorPrimary: BRAND_PURPLE,
-      colorSuccess: BRAND_DARK,
-      colorWarning: '#f59e0b',
-      colorError: '#ef4444',
-      colorInfo: '#3b82f6',
+      colorPrimary: '#059669', // Emerald-600
+      colorSuccess: '#10b981', // Emerald-500
+      colorWarning: '#f59e0b', // Amber-500
+      colorError: '#ef4444', // Red-500
+      colorInfo: '#3b82f6', // Blue-500
       borderRadius: 8,
       colorBgContainer: isDarkMode ? '#1f2937' : '#ffffff',
       colorBgElevated: isDarkMode ? '#374151' : '#f8fafc',
     },
     components: {
       Layout: {
-        headerBg: isDarkMode ? BRAND_DARK : '#ffffff',
-        siderBg: isDarkMode ? BRAND_DARK : '#f8fafc',
+        headerBg: isDarkMode ? '#1f2937' : '#ffffff',
+        siderBg: isDarkMode ? '#111827' : '#f8fafc',
         bodyBg: isDarkMode ? '#111827' : '#f0fdf4',
       },
       Menu: {
         itemBg: 'transparent',
-        itemSelectedBg: isDarkMode ? `${BRAND_PURPLE}20` : `${BRAND_PURPLE}10`,
-        itemHoverBg: isDarkMode ? `${BRAND_PURPLE}10` : `${BRAND_PURPLE}05`,
-        itemSelectedColor: BRAND_PURPLE,
-        itemHoverColor: BRAND_PURPLE,
+        itemSelectedBg: isDarkMode ? 'rgba(5, 150, 105, 0.2)' : 'rgba(5, 150, 105, 0.1)',
+        itemHoverBg: isDarkMode ? 'rgba(5, 150, 105, 0.1)' : 'rgba(5, 150, 105, 0.05)',
+        itemSelectedColor: '#059669',
+        itemHoverColor: '#059669',
         subMenuItemBg: 'transparent',
-        itemActiveBg: isDarkMode ? `${BRAND_PURPLE}15` : `${BRAND_PURPLE}08`,
+        itemActiveBg: isDarkMode ? 'rgba(5, 150, 105, 0.15)' : 'rgba(5, 150, 105, 0.08)',
       },
       Button: {
-        primaryShadow: `0 2px 4px ${BRAND_PURPLE}20`,
+        primaryShadow: '0 2px 4px rgba(5, 150, 105, 0.2)',
       },
       Modal: {
-        headerBg: isDarkMode ? BRAND_DARK : '#ffffff',
-        contentBg: isDarkMode ? BRAND_DARK : '#ffffff',
+        headerBg: isDarkMode ? '#1f2937' : '#ffffff',
+        contentBg: isDarkMode ? '#1f2937' : '#ffffff',
       }
     },
   };
@@ -103,14 +98,20 @@ const AppLayout = () => {
             icon={<MenuOutlined />}
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className="shadow-lg border-green-200 hover:border-green-300 bg-white/90 backdrop-blur-sm"
-            style={{ borderColor: '##D1C2DD' }}
+            style={{ borderColor: '#bbf7d0' }}
           />
-        </div>#D1C2DD
+        </div>
         
         {/* Mobile Sidebar with Overlay */}
         {isSidebarOpen && (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 sm:hidden">
-            <div className="w-64 h-full" onClick={(e) => e.stopPropagation()}>
+          <div 
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 sm:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          >
+            <div 
+              className="w-64 h-full transform transition-transform duration-300"
+              onClick={(e) => e.stopPropagation()}
+            >
               <Sidebar
                 user={user}
                 showModal={showModal}
@@ -123,7 +124,7 @@ const AppLayout = () => {
 
         {/* Desktop Sidebar */}
         <div className="hidden sm:block">
-          <Sidebar user={user} showModal={showModal} />
+          <Sidebar user={user} showModal={showModal} isMobile={false} />
         </div>
 
         <Layout className="sm:mr-64">
@@ -135,7 +136,7 @@ const AppLayout = () => {
             }`}
             style={{
               background: isDarkMode 
-                ? `${BRAND_DARK}90` 
+                ? 'rgba(31, 41, 55, 0.9)' 
                 : 'linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(240, 253, 244, 0.8))',
             }}
           >
@@ -146,7 +147,7 @@ const AppLayout = () => {
               unCheckedChildren={<BulbOutlined />}
               className="ml-4"
               style={{
-                backgroundColor: isDarkMode ? BRAND_PURPLE : undefined,
+                backgroundColor: isDarkMode ? '#059669' : undefined,
               }}
             />
             <Button
@@ -155,8 +156,8 @@ const AppLayout = () => {
               onClick={handleLogout}
               className="ml-4 shadow-lg hover:shadow-xl transition-all duration-300"
               style={{
-                background: `linear-gradient(135deg, ${BRAND_PURPLE}, #6a2c7a)`,
-                borderColor: BRAND_PURPLE,
+                background: 'linear-gradient(135deg, #059669, #10b981)',
+                borderColor: '#059669',
               }}
             >
               خروج
@@ -170,7 +171,7 @@ const AppLayout = () => {
             style={{
               minHeight: 'calc(100vh - 64px)',
               background: isDarkMode 
-                ? `linear-gradient(135deg, ${BRAND_DARK}, #1a2a23)` 
+                ? 'linear-gradient(135deg, #111827, #1f2937)' 
                 : 'linear-gradient(135deg, rgba(240, 253, 244, 0.3), rgba(236, 253, 245, 0.5))',
             }}
           >
@@ -191,9 +192,9 @@ const AppLayout = () => {
           }}
           okButtonProps={{
             style: {
-              background: `linear-gradient(135deg, ${BRAND_PURPLE}, #6a2c7a)`,
-              borderColor: BRAND_PURPLE,
-              boxShadow: `0 2px 8px ${BRAND_PURPLE}30`,
+              background: 'linear-gradient(135deg, #059669, #10b981)',
+              borderColor: '#059669',
+              boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)',
             }
           }}
         >

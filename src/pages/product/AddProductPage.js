@@ -53,9 +53,9 @@ function AddVariationProduct() {
       const { variantData } = location.state;
 
       const initialValues = {
-        buy_price: variantData.buy_price,
-        price: variantData.price,
-        off_price: variantData.off_price,
+        // buy_price: variantData.buy_price,
+        // price: variantData.price,
+        // off_price: variantData.off_price,
         sku: "", // خالی کردن SKU برای تولید کد جدید
         upc: variantData.upc,
         stock: variantData.stock,
@@ -63,17 +63,7 @@ function AddVariationProduct() {
         product_id: parseInt(productId || variantData.product_id),
       };
 
-      // کپی کردن تصاویر موجود (اختیاری - می‌توانید این بخش را حذف کنید)
-      // if (variantData.images && variantData.images.length > 0) {
-      //   const existingImages = variantData.images.map((imageUrl, index) => ({
-      //     uid: `existing-${index}`,
-      //     name: `image-${index}`,
-      //     status: 'done',
-      //     url: imageUrl,
-      //   }));
-      //   setImageFiles(existingImages);
-      // }
-
+     
       // کپی کردن Global Properties
       if (
         variantData.global_properties &&
@@ -299,9 +289,9 @@ function AddVariationProduct() {
       const formData = new FormData();
 
       const basicFields = [
-        "buy_price",
-        "price",
-        "off_price",
+        // "buy_price",
+        // "price",
+        // "off_price",
         "sku",
         "upc",
         "stock",
@@ -505,7 +495,7 @@ function AddVariationProduct() {
               })}
             </Card>
           )}
-          <Row gutter={16}>
+          {/* <Row gutter={16}>
             <Col span={8}>
               <Form.Item
                 name="buy_price"
@@ -563,10 +553,10 @@ function AddVariationProduct() {
                 />
               </Form.Item>
             </Col>
-          </Row>
+          </Row> */}
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="upc" label="کد جهانی محصول">
+              <Form.Item name="upc" label="کد محصول">
                 <Input />
               </Form.Item>
             </Col>

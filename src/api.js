@@ -1,7 +1,7 @@
 import axios from "axios";
 import { logout } from "./services/auth";
 
-const API_URL = "https://api.digizooom.com/api/v1";
+const API_URL = "https://gol.digizooom.com/api/v1";
 
 // Create an Axios instance
 const api = axios.create({
