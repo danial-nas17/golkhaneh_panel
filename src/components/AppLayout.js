@@ -65,9 +65,9 @@ const AppLayout = () => {
     },
     components: {
       Layout: {
-        headerBg: isDarkMode ? '#1f2937' : '#ffffff',
-        siderBg: isDarkMode ? '#111827' : '#f8fafc',
-        bodyBg: isDarkMode ? '#111827' : '#f0fdf4',
+        headerBg: isDarkMode ? '#1f2937' : '#fff',
+        siderBg: isDarkMode ? '#111827' : '#fff',
+        bodyBg: isDarkMode ? '#111827' : '#fff',
       },
       Menu: {
         itemBg: 'transparent',
@@ -137,7 +137,7 @@ const AppLayout = () => {
             style={{
               background: isDarkMode 
                 ? 'rgba(31, 41, 55, 0.9)' 
-                : 'linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(240, 253, 244, 0.8))',
+                : '#fff',
             }}
           >
             <Switch
@@ -172,7 +172,7 @@ const AppLayout = () => {
               minHeight: 'calc(100vh - 64px)',
               background: isDarkMode 
                 ? 'linear-gradient(135deg, #111827, #1f2937)' 
-                : 'linear-gradient(135deg, rgba(240, 253, 244, 0.3), rgba(236, 253, 245, 0.5))',
+                : '#fff',
             }}
           >
             <div className="max-w-full">

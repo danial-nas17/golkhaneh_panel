@@ -68,7 +68,7 @@ const Sidebar = ({ showModal, isMobile, onCloseMobile }) => {
   const logoContainerStyle = {
     background: isDarkMode
       ? "linear-gradient(135deg, #374151, #4b5563)"
-      : "linear-gradient(135deg, #ecfdf5, #d1fae5)",
+      : "linear-gradient(135deg, #fff, #fff)",
     borderRadius: "16px",
     margin: "16px",
     padding: "20px",
@@ -252,7 +252,7 @@ const Sidebar = ({ showModal, isMobile, onCloseMobile }) => {
                   سفارشات
                 </Menu.Item>
               )}
-              {hasPermission("order") && (
+              {/* {hasPermission("order") && (
                 <Menu.Item
                   key="/orders/manual"
                   icon={<ShoppingCartOutlined />}
@@ -264,7 +264,7 @@ const Sidebar = ({ showModal, isMobile, onCloseMobile }) => {
                 >
                   سفارش دستی
                 </Menu.Item>
-              )}
+              )} */}
             </SubMenu>
           )}
 
