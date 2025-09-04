@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Table, Tag, Card, Button, Select, message, Input } from "antd";
-import { EyeOutlined, SearchOutlined } from "@ant-design/icons";
+import { EyeOutlined, SearchOutlined, PlusOutlined, EditOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import api from "../../api";
 import dayjs from "dayjs";
+import OrderCreationModal from "./OrderCreationModal";
+import OrderEditModal from "./OrderEditModal";
+
 
 const { Option } = Select;
 
@@ -18,37 +21,46 @@ const debounce = (func, delay) => {
 const OrderList = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchText, setSearchText] = useState(""); 
+  const [searchText, setSearchText] = useState("");
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 25,
     total: 0,
   });
+  const [modalVisible, setModalVisible] = useState(false);
   const navigate = useNavigate();
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
+
+  const openEditModal = (id) => {
+    setSelectedOrderId(id);
+    setEditModalVisible(true);
+  };
+
+   const handleUpdated = () => {
+    fetchOrders(pagination.current, pagination.pageSize, searchText);
+  };
 
   const statusTranslations = {
-    pending: "در انتظار پرداخت",
-    shipped: "ارسال شده",
-    processing: "در حال پردازش",
-    delivered: "تحویل داده شده",
-    cancelled: "لغو شده"
+    OPEN: "باز",
+    CLOSED: "بسته",
+    CANCELLED: "لغو شده",
+    COMPLETED: "تکمیل شده"
   };
-  
+
 
   const statusColors = {
-    pending: "gold",
-    shipped: "gray",
-    processing: "blue",
-    delivered: "green",
-    cancelled: "red",
+    OPEN: "blue",
+    CLOSED: "green",
+    CANCELLED: "red",
+    COMPLETED: "green",
   };
 
   const fetchOrders = async (page = 1, pageSize = 25, search = "") => {
     setLoading(true);
     try {
-      const response = await api.get(`/panel/order`, {
+      const response = await api.get(`/panel/packaging-orders`, {
         params: {
-          includes: ["products"],
           page,
           per_page: pageSize,
           search,
@@ -89,84 +101,73 @@ const OrderList = () => {
     fetchOrders(newPagination.current, newPagination.pageSize, searchText);
   };
 
-  const handleStatusChange = async (orderId, newStatus) => {
-    try {
-      await api.put(`/panel/order/${orderId}`, {
-        status: newStatus,
-      });
-      message.success("وضعیت سفارش با موفقیت به‌روزرسانی شد");
-      fetchOrders(pagination.current, pagination.pageSize, searchText);
-    } catch (error) {
-      if (error.response) {
-        const { status, data } = error.response;
-
-        if (status === 422 && data?.data?.errors) {
-          const errors = Object.values(data.data.errors).flat();
-          message.error(errors.join(", "));
-        } else {
-          message.error(data?.message || "خطا در به‌روزرسانی وضعیت سفارش");
-        }
-      } else {
-        message.error("یک خطای پیش‌بینی‌نشده رخ داد");
-      }
-    }
-  };
 
   const columns = [
     {
-      title: "شناسه سفارش",
+      title: "شماره سفارش",
       dataIndex: "id",
       key: "id",
       render: (id) => <span className="font-semibold">#{id}</span>,
     },
     {
       title: "مشتری",
-      dataIndex: "user",
-      key: "user",
-      render: (user) => (
+      dataIndex: "customer",
+      key: "customer",
+      render: (customer) => (
         <div>
-          <div className="font-medium">{`${user?.first_name} ${user?.last_name}`}</div>
-          <div className="text-gray-500 text-sm">{user.email}</div>
+          <div className="font-medium">{customer?.name}</div>
+          <div className="text-gray-500 text-sm">{customer?.phone}</div>
         </div>
       ),
     },
     {
-      title: "قیمت",
-      dataIndex: "price",
-      key: "price",
-      render: (price) => <span className="font-medium">{price} تومان</span>,
+      title: "تعداد جعبه",
+      dataIndex: "count_item",
+      key: "count_item",
+      render: (count) => <span className="font-medium">{count}</span>,
     },
     {
       title: "وضعیت",
       dataIndex: "status",
       key: "status",
-      render: (status, record) => (
-        <Select
-          value={status}
-          onChange={(value) => handleStatusChange(record.id, value)}
-          className="min-w-[150px]"
-        >
-          {Object.keys(statusColors).map((key) => (
-            <Option key={key} value={key}>
-              <Tag color={statusColors[key]}>{statusTranslations[key]}</Tag>
-            </Option>
-          ))}
-        </Select>
+      render: (status) => (
+        <Tag color={statusColors[status]}>{statusTranslations[status]}</Tag>
       ),
     },
     {
-      title: "تاریخ",
+      title: "تاریخ ایجاد",
       dataIndex: "created_at",
       key: "created_at",
-      // render: (date) => dayjs(date).format("MMM D, YYYY HH:mm"),
+    },
+    {
+      title: "یادداشت",
+      dataIndex: "notes",
+      key: "notes",
+      render: (notes) => (
+        <div className="max-w-xs truncate" title={notes}>
+          {notes}
+        </div>
+      ),
     },
     {
       title: "عملیات",
       key: "actions",
       render: (_, record) => (
-        <Button type="primary" icon={<EyeOutlined />} onClick={() => navigate(`/orders/${record.id}`)}>
-          مشاهده جزئیات
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            type="primary"
+            icon={<EyeOutlined />}
+            onClick={() => navigate(`/orders/packaging/${record.id}`)}
+          >
+            جزئیات
+          </Button>
+          <Button
+            icon={<EditOutlined />}
+            onClick={() => openEditModal(record.id)}
+          >
+            ویرایش
+          </Button>
+        </div>
       ),
     },
   ];
@@ -177,14 +178,23 @@ const OrderList = () => {
         title={
           <div className="flex justify-between items-center">
             <span className="text-xl">سفارش‌ها</span>
-            <Input
-              placeholder="جستجوی سفارش..."
-              prefix={<SearchOutlined />}
-              onChange={handleSearchChange}
-              value={searchText}
-              className="max-w-md"
-              allowClear
-            />
+            <div className="flex items-center gap-4">
+              <Input
+                placeholder="جستجوی سفارش..."
+                prefix={<SearchOutlined />}
+                onChange={handleSearchChange}
+                value={searchText}
+                className="max-w-md"
+                allowClear
+              />
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => setModalVisible(true)}
+              >
+                افزودن سفارش
+              </Button>
+            </div>
           </div>
         }
       >
@@ -203,6 +213,17 @@ const OrderList = () => {
           className="shadow-sm"
         />
       </Card>
+
+      <OrderCreationModal
+        visible={modalVisible}
+        onCancel={() => setModalVisible(false)}
+      />
+       <OrderEditModal
+        visible={editModalVisible}
+        orderId={selectedOrderId}
+        onCancel={() => setEditModalVisible(false)}
+        onUpdated={handleUpdated}
+      />
     </div>
   );
 };
