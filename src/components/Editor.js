@@ -112,7 +112,7 @@ export default function TinyEditor({
   };
 
   const api = axios.create({
-    baseURL: "https://gol.digizooom.com/api/v1/",
+    baseURL: "http://gol-api.qasralanqaa.com/api/v1/",
   });
 
   api.interceptors.request.use(

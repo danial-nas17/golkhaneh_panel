@@ -27,10 +27,10 @@ export class ErrorHandler {
 
       switch (status) {
         case 422:
-          // Validation errors
+          // Validation errors - handle your specific format
           errorInfo.message = data.message || "خطای اعتبارسنجی";
-          errorInfo.validationErrors = data.data?.errors || data.errors || {};
-          this.handleValidationErrors(errorInfo.validationErrors);
+          errorInfo.validationErrors = data.data?.errors || {};
+          // Don't show validation errors automatically here - let the calling code decide
           break;
         
         case 401:
@@ -39,17 +39,18 @@ export class ErrorHandler {
           break;
         
         case 403:
-          errorInfo.message = "شما مجوز دسترسی به این بخش را ندارید";
+          // Handle 403 errors with your specific format
+          errorInfo.message = data.message || "شما مجوز دسترسی به این بخش را ندارید";
           message.error(errorInfo.message);
           break;
         
         case 404:
-          errorInfo.message = "اطلاعات مورد نظر یافت نشد";
+          errorInfo.message = data.message || "اطلاعات مورد نظر یافت نشد";
           message.error(errorInfo.message);
           break;
         
         case 500:
-          errorInfo.message = "خطای سرور - لطفاً بعداً تلاش کنید";
+          errorInfo.message = data.message || "خطای سرور - لطفاً بعداً تلاش کنید";
           message.error(errorInfo.message);
           break;
         
@@ -74,20 +75,22 @@ export class ErrorHandler {
    * Handle validation errors specifically
    * @param {Object} validationErrors - Validation errors object
    */
-  static handleValidationErrors(validationErrors) {
+  static handleValidationErrors(validationErrors, showMessages = true) {
     if (!validationErrors || typeof validationErrors !== 'object') {
       return;
     }
 
-    // Display validation errors
-    Object.keys(validationErrors).forEach(field => {
-      const errors = validationErrors[field];
-      if (Array.isArray(errors) && errors.length > 0) {
-        // Decode Unicode characters in error messages
-        const decodedErrors = errors.map(error => this.decodeUnicodeString(error));
-        message.error(`${this.getFieldDisplayName(field)}: ${decodedErrors.join(', ')}`);
-      }
-    });
+    // Display validation errors only if requested
+    if (showMessages) {
+      Object.keys(validationErrors).forEach(field => {
+        const errors = validationErrors[field];
+        if (Array.isArray(errors) && errors.length > 0) {
+          // Decode Unicode characters in error messages
+          const decodedErrors = errors.map(error => this.decodeUnicodeString(error));
+          message.error(`${this.getFieldDisplayName(field)}: ${decodedErrors.join(', ')}`);
+        }
+      });
+    }
   }
 
   /**
@@ -133,8 +136,20 @@ export class ErrorHandler {
       'validation_rules': 'قوانین اعتبارسنجی',
       'label': 'عنوان',
       'value': 'مقدار',
-      'operator': 'عملگر'
+      'operator': 'عملگر',
+      // Add more field mappings for pots validation
+      'pots.0.serial_code': 'کد سریال گلدان اول',
+      'pots.1.serial_code': 'کد سریال گلدان دوم',
+      'pots.2.serial_code': 'کد سریال گلدان سوم',
+      'pots.3.serial_code': 'کد سریال گلدان چهارم',
+      'pots.4.serial_code': 'کد سریال گلدان پنجم'
     };
+
+    // Handle dynamic pot field names (pots.X.serial_code)
+    if (fieldName.match(/^pots\.\d+\.serial_code$/)) {
+      const potIndex = fieldName.match(/pots\.(\d+)\.serial_code/)[1];
+      return `کد سریال گلدان ${parseInt(potIndex) + 1}`;
+    }
 
     return fieldNames[fieldName] || fieldName;
   }

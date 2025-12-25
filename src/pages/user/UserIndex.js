@@ -17,7 +17,7 @@ import api from "../../api";
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
-  const [currentUserRole, setCurrentUserRole] = useState(null);
+  const [currentUserRole, setCurrentUserRole] = useState(null); // اگر بعداً لازم شد
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -71,10 +71,11 @@ const UsersPage = () => {
       company_name: user?.company_name,
       email: user?.email,
       mobile: user?.mobile,
-      role: user?.role?.name,
+      role: user?.role?.id, // مقدار Select باید id باشد
       country: user?.country,
       business_info: user?.business_info,
       status: user?.status,
+      password: undefined,
     });
     setIsModalVisible(true);
   };
@@ -107,45 +108,48 @@ const UsersPage = () => {
     try {
       let res;
       if (editingUser) {
+        // به‌روزرسانی اطلاعات پایهٔ کاربر
         res = await api.post(`panel/users/${editingUser.id}?_method=PUT`, {
           first_name: values?.first_name,
           last_name: values?.last_name,
-          // company_name: values.company_name,
           email: values?.email,
           mobile: values?.mobile,
-          // country: values.country,
-          // business_info: values.business_info,
-          password: values?.password,
+          password: values?.password, // اختیاری
           status: values?.status,
         });
 
-        if (res?.data?.data?.id && currentUserRole === "super_admin") {
-          if (editingUser?.role) {
-            const previousRole = roles.find(
-              (role) => role?.name === editingUser?.role?.name
-            );
-            if (previousRole) {
-              await removeRoleFromUser(res?.data?.data?.id, previousRole.id);
-            }
+        // اگر نقش جدید انتخاب شده و با قبلی فرق دارد، قبلی را حذف و جدید را اعمال کن
+        if (res?.data?.data?.id && values?.role) {
+          const userId = res.data.data.id;
+          const prevRoleId = editingUser?.role?.id;
+          if (prevRoleId && prevRoleId !== values.role) {
+            await removeRoleFromUser(userId, prevRoleId);
           }
-
-          await api.post("panel/roles/assignRoleToUser", {
-            user_id: res?.data?.data?.id,
-            role_id: values?.role,
-          });
+          if (prevRoleId !== values.role) {
+            await api.post("panel/roles/assignRoleToUser", {
+              user_id: userId,
+              role_id: values.role,
+            });
+          }
         }
 
         message.success("کاربر با موفقیت به‌روزرسانی شد");
       } else {
+        // ایجاد کاربر جدید
         res = await api.post("panel/users", {
-          ...values,
-          status: values?.status, 
+          first_name: values?.first_name,
+          last_name: values?.last_name,
+          email: values?.email,
+          mobile: values?.mobile,
+          password: values?.password,
+          status: values?.status,
         });
 
-        if (res?.data?.data?.id && currentUserRole === "super_admin") {
+        // اختصاص نقش پس از ایجاد
+        if (res?.data?.data?.id && values?.role) {
           await api.post("panel/roles/assignRoleToUser", {
-            user_id: res?.data?.data?.id,
-            role_id: values?.role?.id,
+            user_id: res.data.data.id,
+            role_id: values.role,
           });
         }
 
@@ -158,17 +162,15 @@ const UsersPage = () => {
     } catch (error) {
       if (error.response) {
         const { status, data } = error.response;
-
         if (status === 422 && data?.data?.errors) {
-          const errors = Object.values(data.data.errors).flat(); 
-          message.error(errors.join(", ")); 
+          const errors = Object.values(data.data.errors).flat();
+          message.error(errors.join(", "));
         } else {
           message.error(data?.message || "خطا در ذخیره کاربر");
         }
       } else {
         message.error("یک خطای غیرمنتظره رخ داد");
       }
-
       console.error("خطا در ذخیره کاربر:", error);
     }
   };
@@ -189,23 +191,22 @@ const UsersPage = () => {
       dataIndex: "last_name",
       key: "last_name",
     },
-    {
-      title: "کد معرف",
-      dataIndex: "referral_code",
-      key: "referral_code",
-      render: (referral_code, record) => (
-        <>
-          <div>{referral_code}</div>
-          {record.referred_by && (
-            <div style={{ fontSize: "12px", color: "#888" }}>
-              ارجاع‌دهنده: {record.referred_by.first_name}{" "}
-              {record.referred_by.last_name} ({record.referred_by.mobile})
-            </div>
-          )}
-        </>
-      ),
-    },
-
+    // {
+    //   title: "کد معرف",
+    //   dataIndex: "referral_code",
+    //   key: "referral_code",
+    //   render: (referral_code, record) => (
+    //     <>
+    //       <div>{referral_code}</div>
+    //       {record.referred_by && (
+    //         <div style={{ fontSize: "12px", color: "#888" }}>
+    //           ارجاع‌دهنده: {record.referred_by.first_name}{" "}
+    //           {record.referred_by.last_name} ({record.referred_by.mobile})
+    //         </div>
+    //       )}
+    //     </>
+    //   ),
+    // },
     {
       title: "ایمیل",
       dataIndex: "email",
@@ -216,11 +217,10 @@ const UsersPage = () => {
       dataIndex: "mobile",
       key: "mobile",
     },
-
     {
       title: "نقش",
-      dataIndex: ["role", "name"],
       key: "role",
+      render: (_, record) => record?.role?.name || "-",
     },
     {
       title: "وضعیت",
@@ -263,10 +263,7 @@ const UsersPage = () => {
   return (
     <Card>
       <div style={{ padding: "24px" }}>
-        <div
-          className="flex justify-between mb-10"
-          style={{ marginBottom: "16px" }}
-        >
+        <div className="flex justify-between mb-10" style={{ marginBottom: "16px" }}>
           <h1 className="text-xl">مدیریت کاربران</h1>
           <Button
             type="primary"
@@ -285,6 +282,7 @@ const UsersPage = () => {
           dataSource={users}
           rowKey="id"
           loading={loading}
+          size="small"
           scroll={{ x: 1200 }}
         />
 
@@ -293,13 +291,9 @@ const UsersPage = () => {
           open={isModalVisible}
           onCancel={() => setIsModalVisible(false)}
           footer={null}
+          destroyOnClose
         >
-          <Form
-            form={form}
-            layout="vertical"
-            onFinish={handleSubmit}
-            autoComplete="off"
-          >
+          <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off">
             <Form.Item
               name="first_name"
               label="نام"
@@ -311,20 +305,10 @@ const UsersPage = () => {
             <Form.Item
               name="last_name"
               label="نام خانوادگی"
-              rules={[
-                { required: true, message: "لطفاً نام خانوادگی را وارد کنید" },
-              ]}
+              rules={[{ required: true, message: "لطفاً نام خانوادگی را وارد کنید" }]}
             >
               <Input autoComplete="off" />
             </Form.Item>
-
-            {/* <Form.Item
-      name="company_name"
-      label="نام شرکت"
-      rules={[{ required: true, message: "لطفاً نام شرکت را وارد کنید" }]}
-    >
-      <Input autoComplete="off" />
-    </Form.Item> */}
 
             <Form.Item
               name="email"
@@ -340,49 +324,32 @@ const UsersPage = () => {
             <Form.Item
               name="mobile"
               label="موبایل"
-              rules={[
-                { required: true, message: "لطفاً شماره موبایل را وارد کنید" },
-              ]}
+              rules={[{ required: true, message: "لطفاً شماره موبایل را وارد کنید" }]}
             >
               <Input autoComplete="off" />
             </Form.Item>
 
-            {/* <Form.Item
-      name="country"
-      label="کشور"
-      rules={[{ required: true, message: "لطفاً کشور را وارد کنید" }]}
-    >
-      <Input autoComplete="off" />
-    </Form.Item> */}
-
-            {/* <Form.Item
-      name="business_info"
-      label="اطلاعات کسب‌وکار"
-      rules={[{ required: true, message: "لطفاً اطلاعات کسب‌وکار را وارد کنید" }]}
-    >
-      <Input.TextArea autoComplete="off"/>
-    </Form.Item> */}
-
-            {currentUserRole === "super_admin" && (
-              <Form.Item name="role" label="نقش">
-                <Select allowClear>
-                  {roles.map((role) => (
-                    <Select.Option key={role.id} value={role.id}>
-                      {role.name}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            )}
+            {/* فیلد نقش برای همه قابل مشاهده است */}
+            <Form.Item
+              name="role"
+              label="نقش"
+              rules={[{ required: true, message: "لطفاً نقش را انتخاب کنید" }]}
+            >
+              <Select allowClear placeholder="انتخاب نقش">
+                {roles.map((role) => (
+                  <Select.Option key={role.id} value={role.id}>
+                    {role.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
 
             <Form.Item
               name="status"
               label="وضعیت"
-              rules={[
-                { required: true, message: "لطفاً وضعیت را انتخاب کنید" },
-              ]}
+              rules={[{ required: true, message: "لطفاً وضعیت را انتخاب کنید" }]}
             >
-              <Select>
+              <Select placeholder="انتخاب وضعیت">
                 <Select.Option value="approved">تایید شده</Select.Option>
                 <Select.Option value="unapproved">تایید نشده</Select.Option>
               </Select>
@@ -391,12 +358,11 @@ const UsersPage = () => {
             <Form.Item
               name="password"
               label="رمز عبور"
-              rules={[
-                !editingUser && {
-                  required: true,
-                  message: "لطفاً رمز عبور را وارد کنید",
-                },
-              ]}
+              rules={
+                editingUser
+                  ? [] // در ویرایش اجباری نیست
+                  : [{ required: true, message: "لطفاً رمز عبور را وارد کنید" }]
+              }
             >
               <Input.Password autoComplete="off" />
             </Form.Item>
@@ -417,3 +383,4 @@ const UsersPage = () => {
 };
 
 export default UsersPage;
+

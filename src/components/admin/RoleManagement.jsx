@@ -21,6 +21,7 @@ const RoleManagement = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingRole, setEditingRole] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [selectedPermissions, setSelectedPermissions] = useState([]);
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -45,15 +46,21 @@ const RoleManagement = () => {
 
   const handleSubmit = async (values) => {
     try {
+      const roleData = {
+        ...values,
+        permissions: selectedPermissions
+      };
+      
       if (editingRole) {
-        await roleService.updateRole(editingRole.id, values);
+        await roleService.updateRole(editingRole.id, roleData);
         message.success('Role updated successfully');
       } else {
-        await roleService.createRole(values);
+        await roleService.createRole(roleData);
         message.success('Role created successfully');
       }
       setModalVisible(false);
       form.resetFields();
+      setSelectedPermissions([]);
       loadData();
     } catch (error) {
       message.error('Operation failed');
@@ -96,9 +103,11 @@ const RoleManagement = () => {
             disabled={record.isSystem}
             onClick={() => {
               setEditingRole(record);
+              const rolePermissions = record.permissions === '*' ? [] : record.permissions;
+              setSelectedPermissions(rolePermissions);
               form.setFieldsValue({
-                ...record,
-                permissions: record.permissions === '*' ? [] : record.permissions
+                name: record.name,
+                description: record.description
               });
               setModalVisible(true);
             }}
@@ -136,6 +145,7 @@ const RoleManagement = () => {
         icon={<PlusOutlined />}
         onClick={() => {
           setEditingRole(null);
+          setSelectedPermissions([]);
           form.resetFields();
           setModalVisible(true);
         }}
@@ -156,6 +166,7 @@ const RoleManagement = () => {
         open={modalVisible}
         onCancel={() => {
           setModalVisible(false);
+          setSelectedPermissions([]);
           form.resetFields();
         }}
         footer={null}
@@ -183,14 +194,14 @@ const RoleManagement = () => {
           </Form.Item>
 
           <Form.Item
-            name="permissions"
             label="Permissions"
             rules={[{ required: true, message: 'Please select permissions' }]}
           >
             <Transfer
               dataSource={permissions}
               titles={['Available', 'Selected']}
-              targetKeys={form.getFieldValue('permissions') || []}
+              targetKeys={selectedPermissions}
+              onChange={setSelectedPermissions}
               render={item => `${item.name} - ${item.description}`}
               rowKey={item => item.id}
               listStyle={{
@@ -207,6 +218,7 @@ const RoleManagement = () => {
               </Button>
               <Button onClick={() => {
                 setModalVisible(false);
+                setSelectedPermissions([]);
                 form.resetFields();
               }}>
                 Cancel

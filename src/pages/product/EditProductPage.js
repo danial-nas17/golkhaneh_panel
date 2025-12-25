@@ -16,6 +16,7 @@ import {
   Divider,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
+import BackButton from "../../components/BackButton";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api";
 
@@ -349,7 +350,12 @@ function EditVariationProduct() {
 
   return (
     <div>
-      <Card title="ویرایش محصول" className="mb-4">
+      <Card className="mb-4" title={
+        <div className="flex items-center justify-between">
+          <span>ویرایش محصول</span>
+          <BackButton to="/products" />
+        </div>
+      }>
         <Form
           form={form}
           layout="vertical"
@@ -425,65 +431,7 @@ function EditVariationProduct() {
             </Card>
           )}
          
-          {/* <Row gutter={16}>
-            <Col span={8}>
-              <Form.Item
-                name="buy_price"
-                label="قیمت خرید"
-                rules={[
-                  { required: true, message: "لطفاً قیمت خرید را وارد کنید" },
-                ]}
-              >
-                <InputNumber
-                  min={0}
-                  className="w-full"
-                  formatter={(value) =>
-                    value
-                      ? `${value
-                          .toString()
-                          .replace(/\B(?=(\d{3})+(?!\d))/g, ",")} `
-                      : ""
-                  }
-                />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item
-                name="price"
-                label="قیمت فروش"
-                rules={[
-                  { required: true, message: "لطفاً قیمت فروش را وارد کنید" },
-                ]}
-              >
-                <InputNumber
-                  min={0}
-                  className="w-full"
-                  formatter={(value) =>
-                    value
-                      ? `${value
-                          .toString()
-                          .replace(/\B(?=(\d{3})+(?!\d))/g, ",")} `
-                      : ""
-                  }
-                />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name="off_price" label="قیمت با تخفیف">
-                <InputNumber
-                  min={0}
-                  className="w-full"
-                  formatter={(value) =>
-                    value
-                      ? `${value
-                          .toString()
-                          .replace(/\B(?=(\d{3})+(?!\d))/g, ",")} `
-                      : ""
-                  }
-                />
-              </Form.Item>
-            </Col>
-          </Row> */}
+         
           <Row gutter={24}>
             <Col span={12}>
               <Form.Item name="upc" label="کد محصول">
@@ -503,9 +451,9 @@ function EditVariationProduct() {
               </Form.Item>
             </Col>
           </Row>
-          <Form.Item name="active" label="فعال" valuePropName="checked">
+          {/* <Form.Item name="active" label="فعال" valuePropName="checked">
             <Switch />
-          </Form.Item>
+          </Form.Item> */}
           <Form.Item label="تصاویر">
             <div className="mb-4 flex flex-wrap gap-4">
               {/* Existing Images */}

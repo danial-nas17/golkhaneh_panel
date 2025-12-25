@@ -3,6 +3,7 @@ import { Table, Button, Space, Popconfirm, message, Image, Card, Input, Tag } fr
 import { EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import api from "../../api";
+import { UnifiedErrorHandler } from "../../utils/unifiedErrorHandler";
 
 const CategoryIndex = () => {
   const [categories, setCategories] = useState([]);
@@ -42,7 +43,10 @@ const CategoryIndex = () => {
         total: response.data.meta.total,
       });
     } catch (error) {
-      message.error("خطا در دریافت اطلاعات");
+      UnifiedErrorHandler.handleApiError(error, null, {
+        showGeneralMessages: true,
+        defaultMessage: "خطا در دریافت اطلاعات"
+      });
     } finally {
       setLoading(false);
     }
@@ -73,7 +77,10 @@ const CategoryIndex = () => {
       message.success("دسته‌بندی با موفقیت حذف شد");
       fetchCategories(pagination.current, pagination.pageSize);
     } catch (error) {
-      message.error("خطا در حذف دسته‌بندی");
+      UnifiedErrorHandler.handleApiError(error, null, {
+        showGeneralMessages: true,
+        defaultMessage: "خطا در حذف دسته‌بندی"
+      });
     }
   };
 

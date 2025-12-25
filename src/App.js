@@ -77,6 +77,21 @@ import GlobalPropertyIndex from "./pages/globalProperty/GlobalPropertyIndex";
 import AddGlobalProperty from "./pages/globalProperty/AddGlobalProperty";
 import EditGlobalProperty from "./pages/globalProperty/EditGlobalProperty";
 import ManualOrderPanel from "./components/orders/ManualOder";
+import ManualOrderCreation from "./pages/orders/ManualOrderCreation";
+import PackagingOrderDetails from "./pages/orders/PackagingOrderDetails";
+import OrderLogsPage from "./pages/orders/OrderLogsPage";
+import CancellationsList from "./pages/orders/cancel";
+import BoxViewPage from "./pages/orders/BoxViewPage";
+import StaffIndex from "./pages/staff/StaffIndex";
+import InvoiceIndex from "./pages/invoices/InvoiceIndex";
+import InvoiceShow from "./pages/invoices/InvoiceShow";
+import InvoicePricingPage from "./pages/invoices/InvoicePricingPage";
+import InvoiceEditPricingPage from "./pages/invoices/InvoiceEditPricingPage";
+import CustomerIndex from "./pages/customer/CustomerIndex";
+import CustomerShow from "./pages/customer/CustomerShow";
+import RequirePermission from "./components/RequirePermission";
+import FirstAllowedRedirect from "./components/FirstAllowedRedirect";
+import AuthValidator from "./components/AuthValidator";
 
 function App() {
   return (
@@ -97,14 +112,16 @@ function App() {
               path="/"
               element={
                 isAuthenticated() ? (
-                  <AppLayout />
+                  <AuthValidator>
+                    <AppLayout />
+                  </AuthValidator>
                 ) : (
                   <Navigate to="/login" replace />
                 )
               }
             >
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route index element={<FirstAllowedRedirect />} />
+              <Route path="/dashboard" element={<RequirePermission permission="dashboard"><Dashboard /></RequirePermission>} />
 
               <Route path="products" element={<ProductIndex />} />
               <Route path="products/add" element={<AddProduct />} />
@@ -126,6 +143,7 @@ function App() {
               <Route path="/users" element={<UsersPage />} />
               {/* <Route path="/users/add" element={<UserForm />} />
               <Route path="/users/edit/:id" element={<UserForm />} /> */}
+              <Route path="/staff" element={<StaffIndex />} />
 
               <Route path="/roles" element={<RoleManagement />} />
 
@@ -152,8 +170,20 @@ function App() {
 
               <Route path="/orders" element={<OrderList />} />
               <Route path="/orders/:id" element={<OrderDetail />} />
+              <Route path="/orders/packaging/:id" element={<PackagingOrderDetails />} />
+              <Route path="/orders/logs/:id" element={<OrderLogsPage />} />
+              <Route path="/orders/box/:itemId" element={<BoxViewPage />} />
+              <Route path="/orders/manual/:orderId" element={<ManualOrderCreation />} />
               <Route path="/orders/manual" element={<ManualOrderPanel />} />
+              <Route path="/cancellations" element={<CancellationsList />} />
 
+              <Route path="/invoices" element={<RequirePermission permission="order"><InvoiceIndex /></RequirePermission>} />
+              <Route path="/invoices/:id" element={<RequirePermission permission="order"><InvoiceShow /></RequirePermission>} />
+              <Route path="/invoices/:id/scan" element={<RequirePermission permission="order"><InvoicePricingPage /></RequirePermission>} />
+              <Route path="/invoices/:id/edit-pricing" element={<RequirePermission permission="order"><InvoiceEditPricingPage /></RequirePermission>} />
+
+              <Route path="/customers" element={<RequirePermission permission="customer"><CustomerIndex /></RequirePermission>} />
+              <Route path="/customers/:id" element={<RequirePermission permission="customer"><CustomerShow /></RequirePermission>} />
 
               <Route path="/subscription" element={<SubscriptionPage />} />
 

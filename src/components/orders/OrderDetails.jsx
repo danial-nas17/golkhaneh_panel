@@ -130,7 +130,7 @@ const OrderDetail = () => {
           onClick={() => navigate("/orders")}
           className="mb-4"
         >
-          بازگشت به سفارش‌ها
+          بازگشت به بسته بندی‌ها
         </Button>
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-semibold">سفارش #{order.id}</h1>

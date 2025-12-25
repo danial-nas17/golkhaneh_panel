@@ -26,9 +26,33 @@ const RoleManagement = () => {
   const [selectedPermissions, setSelectedPermissions] = useState([]);
   const { id } = useParams();
 
+  // Persian labels aligned with sidebar naming
+  const PERMISSION_LABELS = {
+    dashboard: "داشبورد",
+    feature: "قابلیت‌ها",
+    users: "مدیریت کاربران",
+    roles: "مدیریت نقش‌ها",
+    permissions: "مجوزها",
+    category: "دسته‌بندی",
+    attribute: "ویژگی‌ها",
+    product: "محصولات",
+    packaging: "بسته‌بندی",
+    "packaging-cancellation": "درخواست‌های ابطال",
+    invoice: "فاکتورهای فروش",
+    customer: "مشتریان",
+    "store-staff": "مدیریت پرسنل",
+  };
+
   useEffect(() => {
-    fetchRoles();
-    fetchPermissions();
+    const load = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([fetchRoles(), fetchPermissions()]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, []);
 
   const fetchRoles = async () => {
@@ -43,7 +67,12 @@ const RoleManagement = () => {
   const fetchPermissions = async () => {
     try {
       const response = await roleService.getAllPermissions();
-      setPermissions(response?.data?.data?.map(perm => ({ key: perm.name, title: perm.name })));
+      const list = response?.data?.data || [];
+      const mapped = list.map((perm) => ({
+        key: perm.name,
+        title: PERMISSION_LABELS[perm.name] || perm.name,
+      }));
+      setPermissions(mapped);
     } catch (error) {
       message.error("خطا در بارگذاری مجوزها");
     }
@@ -137,7 +166,16 @@ const RoleManagement = () => {
       <div className="p-6">
         <div className="flex justify-between mb-4">
           <h1 className="text-2xl">مدیریت نقش‌ها</h1>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalVisible(true)}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              setEditingRole(null);
+              setSelectedPermissions([]);
+              form.resetFields();
+              setModalVisible(true);
+            }}
+          >
             افزودن نقش جدید
           </Button>
         </div>

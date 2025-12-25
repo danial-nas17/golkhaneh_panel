@@ -27,6 +27,7 @@ import {
   UserOutlined,
   CalendarOutlined,
   GlobalOutlined,
+  RollbackOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "../../api";
@@ -50,12 +51,15 @@ function ProductVariationIndex() {
   const [editingVariant, setEditingVariant] = useState(null);
   const [editingValues, setEditingValues] = useState({});
   const [updateLoading, setUpdateLoading] = useState({});
+  const [showDeleted, setShowDeleted] = useState(false);
   
   // States for logs modal
   const [logsModalVisible, setLogsModalVisible] = useState(false);
   const [productLogs, setProductLogs] = useState([]);
   const [logsLoading, setLogsLoading] = useState(false);
   const [selectedProductTitle, setSelectedProductTitle] = useState("");
+  const [selectedVariantId, setSelectedVariantId] = useState(null);
+  const [revertLoading, setRevertLoading] = useState({});
   
   const getColor = (index) => {
     const colors = [
@@ -74,6 +78,11 @@ function ProductVariationIndex() {
   });
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  // Check if a variant is deleted
+  const isVariantDeleted = (variant) => {
+    return variant.deleted_at !== null && variant.deleted_at !== undefined;
+  };
 
   // const fetchBrands = async () => {
   //   try {
@@ -95,14 +104,15 @@ function ProductVariationIndex() {
       const search = searchParams.get("search") || "";
       const brand = searchParams.get("brand") || null;
 
-      const response = await api.get("/panel/product-variation", {
-        params: {
-          page,
-          per_page: pageSize,
-          search: search.trim(),
-          brand,
-        },
-      });
+      const params = {
+        page,
+        per_page: pageSize,
+        search: search.trim(),
+        brand,
+        ...(showDeleted && { with_deleted: true }),
+      };
+
+      const response = await api.get("/panel/product-variation", { params });
 
       setProducts(response?.data?.data || []);
       setPagination({
@@ -121,6 +131,7 @@ function ProductVariationIndex() {
   const fetchProductLogs = async (variantId, productTitle) => {
     setLogsLoading(true);
     setSelectedProductTitle(productTitle);
+    setSelectedVariantId(variantId);
     try {
       const response = await api.get(`/panel/product-variation/${variantId}`, {
         params: {
@@ -140,6 +151,34 @@ function ProductVariationIndex() {
       message.error("دریافت لاگها با خطا مواجه شد");
     } finally {
       setLogsLoading(false);
+    }
+  };
+
+  // Revert to specific log state for variants
+  const handleRevertToLog = async (logId) => {
+    if (!selectedVariantId) {
+      message.error("شناسه تنوع محصول یافت نشد");
+      return;
+    }
+
+    setRevertLoading(prev => ({ ...prev, [logId]: true }));
+    
+    try {
+      await api.post(`/panel/product-variation/${selectedVariantId}/transition-audit/${logId}`);
+      
+      message.success("تنوع محصول با موفقیت به حالت قبلی بازگردانده شد");
+      
+      // Refresh both logs and variants data
+      await Promise.all([
+        fetchProductLogs(selectedVariantId, selectedProductTitle),
+        fetchProducts()
+      ]);
+      
+    } catch (error) {
+      console.error("خطا در بازگردانی لاگ:", error);
+      message.error("خطا در بازگردانی لاگ");
+    } finally {
+      setRevertLoading(prev => ({ ...prev, [logId]: false }));
     }
   };
 
@@ -169,6 +208,11 @@ function ProductVariationIndex() {
       restore: "gold",
     };
     return colors[eventType] || "default";
+  };
+
+  // Check if log can be reverted (exclude 'created' event type)
+  const canRevertLog = (eventType) => {
+    return eventType !== 'created';
   };
 
   // Format change value for display
@@ -333,7 +377,7 @@ function ProductVariationIndex() {
     fetchProducts();
     
     setSearchInput(searchParams.get("search") || "");
-  }, [searchParams]);
+  }, [searchParams, showDeleted]);
 
   const handleDelete = async (id) => {
     try {
@@ -367,6 +411,16 @@ function ProductVariationIndex() {
       title: "عنوان",
       dataIndex: "title",
       key: "title",
+      render: (title, record) => (
+        <div>
+          {title}
+          {isVariantDeleted(record) && (
+            <Tag color="red" className="ml-2">
+              حذف شده
+            </Tag>
+          )}
+        </div>
+      ),
     },
     {
       title: "تصویر",
@@ -384,21 +438,21 @@ function ProductVariationIndex() {
             style={{ objectFit: "cover" }}
           />
         ) : (
-          <span>بدون تصویر</span>
+          <span>- </span>
         );
       },
     },
-    {
-      title: "کد کالا",
-      dataIndex: "SKU",
-      key: "SKU",
-      render: (sku) => <span style={{ direction: "ltr", textAlign: "right", display: "block" }}>{sku}</span>,
-    },
-    {
-      title: "بارکد",
-      dataIndex: "UPC",
-      key: "UPC",
-    },
+    // {
+    //   title: "کد کالا",
+    //   dataIndex: "SKU",
+    //   key: "SKU",
+    //   render: (sku) => <span style={{ direction: "ltr", textAlign: "right", display: "block" }}>{sku}</span>,
+    // },
+    // {
+    //   title: "بارکد",
+    //   dataIndex: "UPC",
+    //   key: "UPC",
+    // },
     // {
     //   title: "قیمت خرید",
     //   dataIndex: "buy_price",
@@ -478,16 +532,7 @@ function ProductVariationIndex() {
         return stock;
       },
     },
-    {
-      title: "وضعیت انتشار",
-      dataIndex: "active",
-      key: "published",
-      render: (published) => (
-        <Tag color={published ? "green" : "red"}>
-          {published ? "منتشر شده" : "منتشر نشده"}
-        </Tag>
-      ),
-    },
+   
     {
       title: "ویژگی‌ها",
       dataIndex: "attribute_varitation",
@@ -515,33 +560,33 @@ function ProductVariationIndex() {
       key: "actions",
       render: (_, record) => (
         <Space>
-         
-              
-              <Button
-                type="primary"
-                icon={<EditOutlined />}
-                size="small"
-                onClick={() => navigate(`/productsVariation/edit/${record.product_variant_id}`)}
-                title="ویرایش کامل"
-              />
-              <Button
-                type="default"
-                icon={<FileTextOutlined />}
-                size="small"
-                onClick={() => fetchProductLogs(record.product_variant_id, record.title)}
-                title="مشاهده لاگها"
-              >
-                لاگها
-              </Button>
-              <Popconfirm
-                title="آیا از حذف این محصول اطمینان دارید؟"
-                onConfirm={() => handleDelete(record.product_variant_id)}
-                okText="بله"
-                cancelText="خیر"
-              >
-                <Button type="primary" danger icon={<DeleteOutlined />} size="small" />
-              </Popconfirm>
-         
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            size="small"
+            onClick={() => navigate(`/productsVariation/edit/${record.product_variant_id}`)}
+            title="ویرایش کامل"
+            disabled={isVariantDeleted(record)}
+          />
+          <Button
+            type="default"
+            icon={<FileTextOutlined />}
+            size="small"
+            onClick={() => fetchProductLogs(record.product_variant_id, record.title)}
+            title="مشاهده لاگها"
+          >
+            لاگها
+          </Button>
+          {!isVariantDeleted(record) && (
+            <Popconfirm
+              title="آیا از حذف این محصول اطمینان دارید؟"
+              onConfirm={() => handleDelete(record.product_variant_id)}
+              okText="بله"
+              cancelText="خیر"
+            >
+              <Button type="primary" danger icon={<DeleteOutlined />} size="small" />
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -571,6 +616,19 @@ function ProductVariationIndex() {
             allowClear
           />
           
+          <Button
+            type={showDeleted ? "primary" : "default"}
+            onClick={() => {
+              setShowDeleted(!showDeleted);
+              // Reset to first page when toggling filter
+              setSearchParams({
+                ...Object.fromEntries(searchParams.entries()),
+                page: 1,
+              });
+            }}
+          >
+            {showDeleted ? "مخفی کردن حذف شده‌ها" : "نمایش حذف شده‌ها"}
+          </Button>
         </div>
 
         <Table
@@ -641,9 +699,32 @@ function ProductVariationIndex() {
                   className="mb-2"
                   title={
                     <div className="flex items-center justify-between">
-                      <Tag color={getEventColor(log.audit_event)} className="text-sm">
-                        {getEventTypePersian(log.audit_event)}
-                      </Tag>
+                      <div className="flex items-center gap-2">
+                        <Tag color={getEventColor(log.audit_event)} className="text-sm">
+                          {getEventTypePersian(log.audit_event)}
+                        </Tag>
+                        {canRevertLog(log.audit_event) && (
+                          <Popconfirm
+                            title="آیا از بازگردانی تنوع محصول به این حالت اطمینان دارید؟"
+                            description="این عملیات باعث تغییر وضعیت کنونی تنوع محصول خواهد شد."
+                            onConfirm={() => handleRevertToLog(log.audit_id)}
+                            okText="بله"
+                            cancelText="خیر"
+                            placement="topLeft"
+                          >
+                            <Button 
+                              size="small" 
+                              type="link" 
+                              icon={<RollbackOutlined />}
+                              loading={revertLoading[log.audit_id]}
+                              className="text-orange-500 hover:text-orange-600"
+                              title="بازگردانی به این حالت"
+                            >
+                              بازگردانی
+                            </Button>
+                          </Popconfirm>
+                        )}
+                      </div>
                       <Text type="secondary" className="text-xs">
                         #{log.audit_id}
                       </Text>

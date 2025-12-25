@@ -17,9 +17,11 @@ import {
   Alert,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
+import BackButton from "../../../components/BackButton";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../../api";
 import TinyEditor from "../../../components/Editor";
+import UnifiedErrorHandler from "../../../utils/unifiedErrorHandler";
 
 const { TextArea } = Input;
 
@@ -30,7 +32,6 @@ function EditProduct() {
   const [loading, setLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(true);
   const [categories, setCategories] = useState([]);
-  const [brands, setBrands] = useState([]);
   const [attributes, setAttributes] = useState([]);
   const [selectedAttributes, setSelectedAttributes] = useState([]);
   const [editorContent1, setEditorContent1] = useState("");
@@ -124,16 +125,14 @@ function EditProduct() {
   const fetchInitialData = async () => {
     setFetchingData(true);
     try {
-      const [categoriesRes, brandsRes, attributesRes, productRes] =
+      const [categoriesRes, attributesRes, productRes] =
         await Promise.all([
           api.get(`/panel/category`),
-          api.get(`/panel/brand`),
           api.get(`/panel/attribute?includes[]=values&type=product`), // دریافت ویژگی‌ها
           api.get(`/panel/product/${id}`),
         ]);
 
       setCategories(categoriesRes?.data?.data || []);
-      setBrands(brandsRes?.data?.data || []);
       setAttributes(attributesRes?.data?.data || []);
 
       const productData = productRes?.data?.data;
@@ -150,7 +149,6 @@ function EditProduct() {
           productData?.categories?.length > 0
             ? productData.categories[0].id
             : undefined,
-        brand: productData?.brand?.id,
         description: productData?.description,
         original: productData?.original === 1,
         featured: productData?.featured === 1,
@@ -211,7 +209,10 @@ function EditProduct() {
         );
       }
     } catch (error) {
-      message.error("خطا در دریافت اطلاعات اولیه");
+      UnifiedErrorHandler.handleApiError(error, null, {
+        showGeneralMessages: true,
+        defaultMessage: "خطا در دریافت اطلاعات اولیه"
+      });
       console.error("Error fetching initial data:", error);
     } finally {
       setFetchingData(false);
@@ -252,7 +253,6 @@ function EditProduct() {
         "video_provider",
         "video_link",
         "catalog_link",
-        "brand",
         "description",
       ];
       basicFields.forEach((field) => {
@@ -358,7 +358,12 @@ function EditProduct() {
 
   return (
     <div>
-      <Card title="ویرایش محصول" className="mb-4">
+      <Card className="mb-4" title={
+        <div className="flex items-center justify-between">
+          <span>ویرایش محصول</span>
+          <BackButton to="/products" />
+        </div>
+      }>
         {validationErrors && (
           <Alert
             message="خطاهای اعتبارسنجی"
@@ -407,44 +412,12 @@ function EditProduct() {
               </Form.Item>
             </Col>
 
-            <Col xs={24} sm={24} md={12} lg={12}>
-              <Form.Item
-                name="brand"
-                label="برند"
-                rules={[
-                  { required: true, message: "لطفاً برند را انتخاب کنید" },
-                ]}
-              >
-                <Select allowClear>
-                  {brands?.map((brand) => (
-                    <Select.Option key={brand.id} value={brand.id}>
-                      {brand.title}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
+    
 
-            <Col xs={24} sm={24} md={12} lg={12}>
-              <Form.Item name="catalog_link" label="لینک کاتالوگ">
-                <Input />
-              </Form.Item>
-            </Col>
+           
           </Row>
 
-          <Row gutter={24}>
-            <Col span={12}>
-              <Form.Item name="video_provider" label="ویدیو">
-                <Input />
-              </Form.Item>
-            </Col>
 
-            <Col span={12}>
-              <Form.Item name="video_link" label="لینک ویدیو">
-                <Input />
-              </Form.Item>
-            </Col>
-          </Row>
 
           <Row gutter={24}>
             <Col span={24}>
@@ -557,7 +530,7 @@ function EditProduct() {
             </Upload>
           </Form.Item>
 
-          <Form.Item
+          {/* <Form.Item
             label="مشخصات محصول"
             validateTrigger={["onChange", "onBlur"]}
             rules={[
@@ -661,7 +634,7 @@ function EditProduct() {
                 <Switch />
               </Form.Item>
             </Col>
-          </Row>
+          </Row> */}
 
           <Form.Item label="تصاویر">
             <div className="mb-4 flex flex-wrap gap-4">
@@ -711,31 +684,7 @@ function EditProduct() {
             </Upload>
           </Form.Item>
 
-          <Divider>بخش سئو</Divider>
-          <Form.Item name="seo_title" label="عنوان سئو">
-            <Input />
-          </Form.Item>
-
-          <Form.Item name="seo_description" label="توضیحات سئو">
-            <TextArea rows={4} />
-          </Form.Item>
-
-          <Form.Item name="canonical" label="URL Canonical">
-            <Input />
-          </Form.Item>
-
-          <Row gutter={24}>
-            <Col span={12}>
-              <Form.Item name="follow" label="Follow" valuePropName="checked">
-                <Switch defaultChecked="true" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="index" label="Index" valuePropName="checked">
-                <Switch defaultChecked="true" />
-              </Form.Item>
-            </Col>
-          </Row>
+        
 
           <Form.Item>
             <Button type="primary" htmlType="submit" loading={loading}>

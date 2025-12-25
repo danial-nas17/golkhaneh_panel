@@ -7,6 +7,7 @@ import { logout } from "../services/auth";
 import { useUser } from "../contexts/UserContext";
 import { useTheme } from "../contexts/ThemeContext";
 import Sidebar from "./sidebar";
+import { usePermissions } from "../hook/usePermissions";
 
 const { Header, Content } = Layout;
 
@@ -16,6 +17,7 @@ const AppLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [form] = Form.useForm();
   const { user, updateUser, loading } = useUser();
+  const { hasPermission } = usePermissions();
   const { isDarkMode, toggleTheme } = useTheme();
 
   const handleLogout = () => {
@@ -88,6 +90,8 @@ const AppLayout = () => {
     },
   };
 
+  // If user doesn't have dashboard, redirect to first allowed menu (fallback: invoices)
+  // This only affects the default index redirect in App.js
   return (
     <ConfigProvider direction="rtl" theme={themeConfig}>
       <Layout className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">

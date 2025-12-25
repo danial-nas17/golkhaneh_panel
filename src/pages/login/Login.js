@@ -3,7 +3,8 @@ import { Form, Input, Button, Card, Alert, Checkbox, message, ConfigProvider } f
 import { UserOutlined, LockOutlined, EnvironmentOutlined } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import { login } from "../../services/auth";
-import logo from "../../images//1.svg"; 
+import logo from "../../images/1.svg";
+import UnifiedErrorHandler from "../../utils/unifiedErrorHandler";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -56,7 +57,7 @@ const Login = () => {
         rgba(110, 231, 183, 0.08) 75%,
         rgba(167, 243, 208, 0.1) 100%
       ),
-      url(${require("../../images/vibrant-flower-bouquet-greenhouse-nature-beauty-generated-by-ai.webp")})
+      url(${require("../../images/fiajyj5fh2jd3bjxkfrq.webp")})
     `,
     backgroundSize: "cover",
     backgroundPosition: "center",
@@ -90,46 +91,26 @@ const Login = () => {
     setError('');
     try {
       const result = await login(values.username, values.password);
-          console.log("✅ پاسخ کامل بک‌اند:", result.data);
+      console.log("✅ پاسخ کامل بک‌اند:", result.data);
 
+      // Show success message first
       message.success("ورود با موفقیت انجام شد ");
-      console.log("Navigating to /dashboard");
-      window.location.href = "/dashboard";
+      
+      // Wait a bit for the message to be visible, then redirect
+      setTimeout(() => {
+        console.log("Navigating to dashboard after login");
+        window.location.replace("/dashboard");
+      }, 500);
     } catch (error) {
-      if (error.response && error.response.status === 422) {
-        const validationErrors = error.validationErrors || {};
-        
-        const firstErrorField = Object.keys(validationErrors)[0];
-        const firstErrorMessage = validationErrors[firstErrorField]?.[0];
-        
-        if (firstErrorMessage) {
-          message.error(firstErrorMessage);
-          setError(firstErrorMessage);
-        } else {
-          const errorMessage = "خطای اعتبارسنجی در فرم";
-          message.error(errorMessage);
-          setError(errorMessage);
-        }
-        
-        const formErrors = {};
-        Object.keys(validationErrors).forEach(field => {
-          formErrors[field] = {
-            errors: validationErrors[field].map(msg => new Error(msg))
-          };
-        });
-        
-        form.setFields(Object.keys(formErrors).map(field => ({
-          name: field,
-          errors: validationErrors[field]
-        })));
-        
-        console.error("خطای اعتبارسنجی:", validationErrors);
-      } else {
-        const errorMessage = error.response?.data?.message || "خطا در ورود. لطفا دوباره تلاش کنید";
-        message.error(errorMessage);
-        setError(errorMessage);
-      }
-    } finally {
+      // Use the unified error handler
+      const errorResult = UnifiedErrorHandler.handleApiError(error, form, {
+        showValidationMessages: false,
+        showGeneralMessages: true,
+        defaultMessage: "خطا در ورود. لطفا دوباره تلاش کنید"
+      });
+      
+      setError(errorResult.message);
+      console.error("خطا در ورود:", errorResult);
       setLoading(false);
     }
   };

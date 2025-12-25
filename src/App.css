@@ -10,6 +10,18 @@ html {
   font-family: "MyCustomFont", sans-serif !important;
 }
 
+/* Ensure Ant Design headings (like Typography.Title) also use project font */
+.ant-typography,
+.ant-typography h1,
+.ant-typography h2,
+.ant-typography h3,
+.ant-typography h4,
+.ant-typography h5,
+.ant-typography h6,
+.ant-typography-title {
+  font-family: "MyCustomFont", sans-serif !important;
+}
+
 /* If using a CSS file */
 .custom-font-table .ant-table {
   font-family: 'MyCustomFont', sans-serif !important; /* Replace with your main font */
@@ -59,4 +71,284 @@ html {
 
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #777; /* Dark mode scrollbar thumb hover color */
+}
+
+/* Right-align error messages for Persian/RTL text */
+.ant-message {
+  direction: rtl;
+  text-align: right;
+  z-index: 9999 !important;
+  position: fixed !important;
+}
+
+.ant-message-notice {
+  z-index: 9999 !important;
+}
+
+.ant-message-notice-content {
+  direction: rtl;
+  text-align: right;
+  z-index: 9999 !important;
+}
+
+.ant-message-error .ant-message-notice-content {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Ensure error message text is right-aligned */
+.ant-message-error .ant-message-custom-content {
+  direction: rtl;
+  text-align: right;
+  font-family: "MyCustomFont", sans-serif;
+}
+
+/* Right-align all message types for consistency */
+.ant-message-success .ant-message-custom-content,
+.ant-message-warning .ant-message-custom-content,
+.ant-message-info .ant-message-custom-content {
+  direction: rtl;
+  text-align: right;
+  font-family: "MyCustomFont", sans-serif;
+}
+
+/* Ensure success messages are visible */
+.ant-message-success {
+  z-index: 9999 !important;
+}
+
+.ant-message-success .ant-message-notice-content {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Custom Error Modal Styles */
+.custom-error-modal .ant-modal-content {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.custom-error-modal .ant-modal-header {
+  background: linear-gradient(135deg, #ff4d4f 0%, #f5222d 100%);
+  border-bottom: none;
+  padding: 20px 24px;
+}
+
+.custom-error-modal .ant-modal-body {
+  padding: 24px;
+  font-family: "MyCustomFont", sans-serif;
+}
+
+.custom-error-modal .ant-modal-footer {
+  border-top: 1px solid #f0f0f0;
+  padding: 16px 24px;
+}
+
+/* =========================================
+   Mobile Responsiveness (global tweaks)
+   ========================================= */
+@media (max-width: 640px) {
+  /* Reduce default paddings/gaps on small screens */
+  .ant-layout-content {
+    padding: 12px !important;
+  }
+
+  .ant-card {
+    margin-bottom: 12px;
+  }
+
+  /* Make inline forms stack vertically */
+  .ant-form-inline .ant-form-item {
+    display: block;
+    width: 100%;
+  }
+
+  /* Form labels readable on mobile */
+  .ant-form-item-label > label {
+    font-size: 12px;
+  }
+
+  /* Tables: enable horizontal scroll if too wide */
+  .ant-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Enforce min width so columns don’t squish too much */
+  .ant-table-wrapper .ant-table-container {
+    min-width: 720px;
+  }
+
+  /* Slightly smaller table text on small screens */
+  .ant-table {
+    font-size: 12px;
+  }
+
+  /* Modals: fit viewport width on mobile */
+  .ant-modal {
+    width: 96% !important;
+    max-width: 520px;
+    padding: 0 8px;
+  }
+  .ant-modal-body {
+    padding: 12px;
+  }
+
+  /* Descriptions: stack label/value vertically */
+  .ant-descriptions-view .ant-descriptions-item-container {
+    display: block;
+  }
+  .ant-descriptions-item-label,
+  .ant-descriptions-item-content {
+    display: block;
+    width: 100% !important;
+  }
+
+  /* Order pages specific responsive styles */
+  .responsive-header {
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  .responsive-header .ant-space {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .responsive-button {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .responsive-search {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Order creation page responsive styles */
+  .order-creation-header {
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+
+  .order-creation-header .ant-space {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .order-creation-header .ant-space-item {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  /* Box cards responsive */
+  .box-card .ant-card-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .box-card .ant-card-head-title {
+    font-size: 14px !important;
+  }
+
+  .box-card .ant-card-extra {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-start;
+  }
+
+  .box-card .ant-card-extra .ant-btn {
+    flex: 1;
+    min-width: 100px;
+  }
+
+  /* Form items in boxes */
+  .box-form-row .ant-col {
+    margin-bottom: 12px;
+  }
+
+  .box-form-row .ant-form-item {
+    margin-bottom: 8px;
+  }
+
+  /* Statistics section */
+  .stats-row .ant-col {
+    text-align: center !important;
+    margin-bottom: 12px;
+  }
+
+  /* Modal responsive improvements */
+  .ant-modal-content {
+    border-radius: 8px;
+  }
+
+  /* Button groups in modals */
+  .ant-modal-footer .ant-btn {
+    flex: 1;
+    margin: 0 4px;
+  }
+
+  /* Responsive container adjustments */
+  .responsive-container {
+    padding: 12px !important;
+  }
+
+  /* Better spacing for mobile cards */
+  .ant-card-body {
+    padding: 16px !important;
+  }
+
+  /* Improve table responsiveness */
+  .ant-table-wrapper .ant-table-content {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Make select dropdowns more mobile-friendly */
+  .ant-select-dropdown {
+    min-width: 200px !important;
+  }
+}
+
+/* Medium screens (tablets) */
+@media (max-width: 768px) and (min-width: 641px) {
+  .responsive-button {
+    flex: none;
+    width: auto;
+  }
+
+  .box-card .ant-card-extra .ant-btn {
+    flex: none;
+    width: auto;
+  }
+}
+
+/* Extra small screens (phones) */
+@media (max-width: 480px) {
+  .ant-card-head-title {
+    font-size: 13px !important;
+  }
+
+  .ant-btn {
+    font-size: 12px;
+    padding: 4px 12px;
+    height: 32px;
+  }
+
+  .ant-input, .ant-select-selector, .ant-input-number {
+    font-size: 14px;
+  }
+
+  .ant-form-item-label > label {
+    font-size: 12px;
+  }
+
+  /* Hide some less critical columns on very small screens */
+  .ant-table-thead > tr > th:nth-child(4),
+  .ant-table-tbody > tr > td:nth-child(4) {
+    display: none;
+  }
 }

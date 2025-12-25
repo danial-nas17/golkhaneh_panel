@@ -43,7 +43,7 @@ const OrderCreationModal = ({ visible, onCancel }) => {
   const [hasMoreCustomers, setHasMoreCustomers] = useState(true);
   const [customerSearch, setCustomerSearch] = useState("");
 
-  // state برای ساخت سفارش
+  // state برای ساخت بسته بندی
   const [submitting, setSubmitting] = useState(false);
 
   // گرفتن مشتری‌ها از API
@@ -121,12 +121,12 @@ const OrderCreationModal = ({ visible, onCancel }) => {
 
       const response = await api.post("/panel/packaging-orders", payload);
 
-      message.success("سفارش با موفقیت ایجاد شد");
+      message.success("بسته بندی با موفقیت ایجاد شد");
       onCancel();
       navigate(`/orders/manual/${response.data.data.id}`);
     } catch (error) {
       console.error("Error creating order:", error);
-      message.error("خطا در ایجاد سفارش");
+      message.error("خطا در ایجاد بسته بندی");
     } finally {
       setSubmitting(false);
     }
@@ -137,7 +137,7 @@ const OrderCreationModal = ({ visible, onCancel }) => {
       title={
         <div className="flex items-center gap-2">
           <CheckCircleOutlined className="text-green-500" />
-          <span>ایجاد سفارش دستی</span>
+          <span>ایجاد بسته بندی دستی</span>
         </div>
       }
       open={visible}
@@ -193,11 +193,11 @@ const OrderCreationModal = ({ visible, onCancel }) => {
           </Row>
         </div>
 
-        {/* اطلاعات سفارش */}
+        {/* اطلاعات بسته بندی */}
         <div className="mb-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <FileTextOutlined />
-            اطلاعات سفارش
+            اطلاعات بسته بندی
           </h3>
 
           <Row gutter={16}>
@@ -233,7 +233,7 @@ const OrderCreationModal = ({ visible, onCancel }) => {
             loading={submitting}
             icon={<CheckCircleOutlined />}
           >
-            ایجاد سفارش
+            ایجاد بسته بندی
           </Button>
         </div>
       </Form>

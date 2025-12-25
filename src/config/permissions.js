@@ -5,6 +5,7 @@ export const MODULES = {
     SETTINGS: 'settings',
     REPORTS: 'reports',
     CONTENT: 'content',
+    STORE_STAFF: 'store-staff',
     // Add your custom modules here
   };
   

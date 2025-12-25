@@ -15,9 +15,11 @@ import {
   Select,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
+import BackButton from "../../components/BackButton";
 import { useNavigate } from "react-router-dom";
 import api from "../../api";
 import TinyEditor from "../../components/Editor";
+import UnifiedErrorHandler from "../../utils/unifiedErrorHandler";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -36,26 +38,26 @@ const AddCategoryPage = () => {
     setEditorContent(content);
   };
 
-  useEffect(() => {
-    fetchFilters();
-  }, []);
+  // useEffect(() => {
+  //   fetchFilters();
+  // }, []);
 
-  const fetchFilters = async () => {
-    setFetchingFilters(true);
-    try {
-      const response = await api.get("/panel/dynamic-filter", {
-        params: {
-          per_page: 100, // Get a large number to ensure we get all filters
-        },
-      });
-      setFilters(response.data.data || []);
-    } catch (error) {
-      message.error("خطا در دریافت فیلترها");
-      console.error("Error fetching filters:", error);
-    } finally {
-      setFetchingFilters(false);
-    }
-  };
+  // const fetchFilters = async () => {
+  //   setFetchingFilters(true);
+  //   try {
+  //     const response = await api.get("/panel/dynamic-filter", {
+  //       params: {
+  //         per_page: 100, // Get a large number to ensure we get all filters
+  //       },
+  //     });
+  //     setFilters(response.data.data || []);
+  //   } catch (error) {
+  //     message.error("خطا در دریافت فیلترها");
+  //     console.error("Error fetching filters:", error);
+  //   } finally {
+  //     setFetchingFilters(false);
+  //   }
+  // };
 
   const onFinish = async (values) => {
     setLoading(true);
@@ -106,37 +108,14 @@ const AddCategoryPage = () => {
       message.success("دسته‌بندی با موفقیت اضافه شد.");
       navigate("/categories");
     } catch (error) {
-      if (error.response && error.response.status === 422) {
-        const validationErrors = error.validationErrors || {};
-        
-        // Display the first validation error message
-        const firstErrorField = Object.keys(validationErrors)[0];
-        const firstErrorMessage = validationErrors[firstErrorField]?.[0];
-        
-        if (firstErrorMessage) {
-          message.error(firstErrorMessage);
-        } else {
-          message.error("خطای اعتبارسنجی در فرم");
-        }
-        
-        // Set form field errors
-        const formErrors = {};
-        Object.keys(validationErrors).forEach(field => {
-          formErrors[field] = {
-            errors: validationErrors[field].map(msg => new Error(msg))
-          };
-        });
-        
-        form.setFields(Object.keys(formErrors).map(field => ({
-          name: field,
-          errors: validationErrors[field]
-        })));
-        
-        console.error("خطای اعتبارسنجی:", validationErrors);
-      } else {
-        message.error("خطا در ارسال اطلاعات.");
-        console.error("خطا:", error);
-      }
+      // Use the unified error handler
+      const errorResult = UnifiedErrorHandler.handleApiError(error, form, {
+        showValidationMessages: false, // Don't show individual field messages
+        showGeneralMessages: true,     // Show general error message
+        defaultMessage: "خطا در ارسال اطلاعات."
+      });
+      
+      console.error("خطا در افزودن دسته‌بندی:", errorResult);
     } finally {
       setLoading(false);
     }
@@ -145,7 +124,10 @@ const AddCategoryPage = () => {
   return (
     <Card>
       <div>
-        <h2 className="mb-10 text-xl">افزودن دسته‌بندی جدید</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl">افزودن دسته‌بندی جدید</h2>
+          <BackButton to="/categories" />
+        </div>
         <Spin spinning={loading || fetchingFilters}>
           <Form
             form={form}
@@ -158,7 +140,7 @@ const AddCategoryPage = () => {
             autoComplete="off"
           >
             <Row gutter={16}>
-              <Col xs={24} md={12}>
+              <Col xs={24} md={24}>
                 <Form.Item
                   name="title"
                   label="عنوان"
@@ -172,7 +154,7 @@ const AddCategoryPage = () => {
                   <Input />
                 </Form.Item>
               </Col>
-              <Col xs={24} md={12}>
+              {/* <Col xs={24} md={12}>
                 <Form.Item
                   name="filters"
                   label="فیلترهای دسته‌بندی"
@@ -195,7 +177,7 @@ const AddCategoryPage = () => {
                     ))}
                   </Select>
                 </Form.Item>
-              </Col>
+              </Col> */}
             </Row>
 
             <Form.Item
@@ -224,7 +206,7 @@ const AddCategoryPage = () => {
               <InputNumber min={1} style={{ width: "100%" }} />
             </Form.Item>
 
-            <Form.Item
+            {/* <Form.Item
               label="محتوا"
               // required
               validateTrigger={["onChange", "onBlur"]}
@@ -246,7 +228,7 @@ const AddCategoryPage = () => {
                 model={"Category"}
                 height={1000}
               />
-            </Form.Item>
+            </Form.Item> */}
 
             <div className="border p-4 rounded-lg mb-4">
               <h3 className="text-xl text-blue-500 text-center mb-4">Media</h3>
@@ -299,43 +281,9 @@ const AddCategoryPage = () => {
               </Form.Item>
             </div>
 
-            <Divider>بخش سئو</Divider>
-            <Form.Item
-              name="seo_title"
-              label="عنوان سئو"
-            >
-              <Input />
-            </Form.Item>
+          
 
-            <Form.Item
-              name="seo_description"
-              label="توضیحات سئو"
-             
-            >
-              <TextArea rows={4} />
-            </Form.Item>
-
-            <Form.Item
-              name="canonical"
-              label="URL Canonical"
-              
-            >
-              <Input />
-            </Form.Item>
-
-            <Row gutter={24}>
-              <Col span={12}>
-                <Form.Item name="follow" label="Follow" valuePropName="checked">
-                  <Switch defaultChecked="true" />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item name="index" label="Index" valuePropName="checked">
-                  <Switch defaultChecked="true" />
-                </Form.Item>
-              </Col>
-            </Row>
-
+           
             <Form.Item>
               <Button type="primary" htmlType="submit" loading={loading}>
                 ثبت

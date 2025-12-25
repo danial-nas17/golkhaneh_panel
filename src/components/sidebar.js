@@ -25,10 +25,12 @@ import {
   PercentageOutlined,
   CustomerServiceOutlined,
   TeamOutlined,
+  UsergroupAddOutlined,
 } from "@ant-design/icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { getCurrentUser, logout } from "../services/auth";
+import { useUser } from "../contexts/UserContext";
 import { usePermissions } from "../hook/usePermissions";
 import logo from "../images/1.svg";
 
@@ -38,7 +40,9 @@ const { SubMenu } = Menu;
 const Sidebar = ({ showModal, isMobile, onCloseMobile }) => {
   const { isDarkMode } = useTheme();
   const location = useLocation();
-  const user = getCurrentUser();
+  const { user: ctxUser } = useUser?.() || {};
+  const user = ctxUser || getCurrentUser();
+  const normalizedUser = user && user.data ? user.data : user;
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
 
@@ -134,6 +138,42 @@ const Sidebar = ({ showModal, isMobile, onCloseMobile }) => {
         }}
         className="custom-scrollbar"
       >
+        {/* User header */}
+        {normalizedUser && (
+          <div
+            className="flex items-center gap-3 mx-4 my-3 p-3 rounded-lg"
+            style={{
+              background: isDarkMode
+                ? "rgba(16,185,129,0.08)"
+                : "rgba(16,185,129,0.08)",
+              border: `1px solid ${isDarkMode ? "#065f46" : "#a7f3d0"}`,
+            }}
+          >
+            <Avatar
+              size={40}
+              src={normalizedUser.profile_img || undefined}
+              icon={<UserOutlined />}
+              style={{ backgroundColor: isDarkMode ? "#065f46" : "#10b981" }}
+            >
+              {!normalizedUser.profile_img &&
+                `${(normalizedUser.first_name || "").charAt(0)}${(normalizedUser.last_name || "").charAt(0)}`.toUpperCase()}
+            </Avatar>
+            <div className="flex flex-col min-w-0">
+              <span
+                className="font-semibold truncate"
+                style={{ color: isDarkMode ? "#d1fae5" : "#065f46" }}
+              >
+                {`${normalizedUser.first_name || ""} ${normalizedUser.last_name || ""}`.trim() || normalizedUser.email || "کاربر"}
+              </span>
+              {normalizedUser.role && (
+                <span className="text-xs opacity-75 truncate">
+                  {normalizedUser.role}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         <Menu
           theme={isDarkMode ? "dark" : "light"}
           mode="inline"
@@ -144,12 +184,12 @@ const Sidebar = ({ showModal, isMobile, onCloseMobile }) => {
         >
           {hasPermission("dashboard") && (
             <Menu.Item
-              key="/"
+              key="/dashboard"
               icon={<DashboardOutlined />}
               className="menu-item-greenhouse"
               style={{ margin: "2px 4px", borderRadius: "6px" }}
               onClick={() => {
-                handleMenuClick("/");
+                handleMenuClick("/dashboard");
                 if (isMobile) onCloseMobile();
               }}
             >
@@ -226,11 +266,11 @@ const Sidebar = ({ showModal, isMobile, onCloseMobile }) => {
             </SubMenu>
           )}
 
-          {hasPermission("order") && (
+          {(hasPermission("packaging") || hasPermission("packaging-cancellation")) && (
             <SubMenu
               key="orders"
               icon={<ShoppingCartOutlined />}
-              title="سفارشات"
+              title="بسته بندی"
               style={{
                 margin: "4px 8px",
                 borderRadius: "8px",
@@ -239,7 +279,7 @@ const Sidebar = ({ showModal, isMobile, onCloseMobile }) => {
                 if (isMobile) onCloseMobile();
               }}
             >
-              {hasPermission("order") && (
+              {hasPermission("packaging") && (
                 <Menu.Item
                   key="/orders"
                   icon={<ShoppingCartOutlined />}
@@ -249,27 +289,54 @@ const Sidebar = ({ showModal, isMobile, onCloseMobile }) => {
                     if (isMobile) onCloseMobile();
                   }}
                 >
-                  سفارشات
+                  بسته بندی
                 </Menu.Item>
               )}
-              {/* {hasPermission("order") && (
+              {hasPermission("packaging-cancellation") && (
                 <Menu.Item
-                  key="/orders/manual"
-                  icon={<ShoppingCartOutlined />}
+                  key="/cancellations"
+                  icon={<IssuesCloseOutlined />}
                   style={{ margin: "2px 4px", borderRadius: "6px" }}
                   onClick={() => {
-                    handleMenuClick("/orders/manual");
+                    handleMenuClick("/cancellations");
                     if (isMobile) onCloseMobile();
                   }}
                 >
-                  سفارش دستی
+                  درخواست‌های ابطال
                 </Menu.Item>
-              )} */}
+              )}
             </SubMenu>
           )}
 
-          
-                    {/* {hasPermission("subscription") && (
+          {hasPermission("customer") && (
+            <Menu.Item
+              key="/customers"
+              icon={<UsergroupAddOutlined />}
+              style={{ margin: "2px 4px", borderRadius: "6px" }}
+              onClick={() => {
+                handleMenuClick("/customers");
+                if (isMobile) onCloseMobile();
+              }}
+            >
+              مشتریان
+            </Menu.Item>
+          )}
+
+          {hasPermission("invoice") && (
+            <Menu.Item
+              key="/invoices"
+              icon={<FileTextOutlined />}
+              style={{ margin: "2px 4px", borderRadius: "6px" }}
+              onClick={() => {
+                handleMenuClick("/invoices");
+                if (isMobile) onCloseMobile();
+              }}
+            >
+              فاکتورهای فروش
+            </Menu.Item>
+          )}
+
+          {/* {hasPermission("subscription") && (
                       <Menu.Item
                         key="/subscription"
                         icon={<MailOutlined />}
@@ -287,8 +354,8 @@ const Sidebar = ({ showModal, isMobile, onCloseMobile }) => {
                         اشتراک‌ها
                       </Menu.Item>
                     )} */}
-          
-                    {/* {hasPermission("ticket") && (
+
+          {/* {hasPermission("ticket") && (
                       <Menu.Item
                         key="/tickets"
                         icon={<CustomerServiceOutlined />}
@@ -306,36 +373,50 @@ const Sidebar = ({ showModal, isMobile, onCloseMobile }) => {
                         درخواست پشتیبانی
                       </Menu.Item>
                     )} */}
-          
-                    {hasPermission("users") && (
-                      <Menu.Item
-                        key="/users"
-                        icon={<TeamOutlined />}
-                        style={{ margin: "2px 4px", borderRadius: "6px" }}
-                        onClick={() => {
-                          handleMenuClick("/users");
-                          if (isMobile) onCloseMobile();
-                        }}
-                      >
-                        مدیریت کاربران
-                      </Menu.Item>
-                    )}
-          
-                    {hasPermission("roles") && (
-                      <Menu.Item
-                        key="/roles"
-                        icon={<UserOutlined />}
-                        style={{ margin: "2px 4px", borderRadius: "6px" }}
-                        onClick={() => {
-                          handleMenuClick("/roles");
-                          if (isMobile) onCloseMobile();
-                        }}
-                      >
-                        مدیریت نقش‌ها
-                      </Menu.Item>
-                    )}
-          
-                    {/* {hasPermission("setting") && (
+
+          {hasPermission("users") && (
+            <Menu.Item
+              key="/users"
+              icon={<TeamOutlined />}
+              style={{ margin: "2px 4px", borderRadius: "6px" }}
+              onClick={() => {
+                handleMenuClick("/users");
+                if (isMobile) onCloseMobile();
+              }}
+            >
+              مدیریت کاربران
+            </Menu.Item>
+          )}
+
+          {hasPermission("roles") && (
+            <Menu.Item
+              key="/roles"
+              icon={<UserOutlined />}
+              style={{ margin: "2px 4px", borderRadius: "6px" }}
+              onClick={() => {
+                handleMenuClick("/roles");
+                if (isMobile) onCloseMobile();
+              }}
+            >
+              مدیریت نقش‌ها
+            </Menu.Item>
+          )}
+
+          {hasPermission("store-staff") && (
+            <Menu.Item
+              key="/staff"
+              icon={<TeamOutlined />}
+              style={{ margin: "2px 4px", borderRadius: "6px" }}
+              onClick={() => {
+                handleMenuClick("/staff");
+                if (isMobile) onCloseMobile();
+              }}
+            >
+              مدیریت پرسنل
+            </Menu.Item>
+          )}
+
+          {/* {hasPermission("setting") && (
                       <Menu.Item
                         key="/setting"
                         icon={<SettingOutlined />}

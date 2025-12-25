@@ -15,6 +15,7 @@ import {
   Divider,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
+import BackButton from "../../components/BackButton";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api";
 import { useLocation } from "react-router-dom";
@@ -30,7 +31,6 @@ function AddVariationProduct() {
   const [loading, setLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(true);
   const [categories, setCategories] = useState([]);
-  const [brands, setBrands] = useState([]);
   const [attributes, setAttributes] = useState([]);
   const [selectedAttributes, setSelectedAttributes] = useState([]); // اضافه شده
   const [imageFiles, setImageFiles] = useState([]);
@@ -130,16 +130,14 @@ function AddVariationProduct() {
   const fetchInitialData = async () => {
     setFetchingData(true);
     try {
-      const [categoriesRes, brandsRes, attributesRes, productsRes] =
+      const [categoriesRes, attributesRes, productsRes] =
         await Promise.all([
           api.get(`/panel/category`),
-          api.get(`/panel/brand`),
           api.get(`/panel/attribute?includes[]=values&type=variant`),
           api.get(`/panel/product?per_page=all`),
         ]);
 
       setCategories(categoriesRes.data.data || []);
-      setBrands(brandsRes.data.data || []);
       setAttributes(attributesRes.data.data || []);
       setProducts(productsRes.data.data || []);
       if (productId) {
@@ -399,7 +397,12 @@ function AddVariationProduct() {
 
   return (
     <div>
-      <Card title="افزودن تنوع جدید" className="mb-4">
+      <Card className="mb-4" title={
+        <div className="flex items-center justify-between">
+          <span>افزودن تنوع جدید</span>
+          <BackButton to="/products" />
+        </div>
+      }>
         <Form
           form={form}
           layout="vertical"
@@ -495,65 +498,7 @@ function AddVariationProduct() {
               })}
             </Card>
           )}
-          {/* <Row gutter={16}>
-            <Col span={8}>
-              <Form.Item
-                name="buy_price"
-                label="قیمت خرید"
-                rules={[
-                  { required: true, message: "لطفاً قیمت خرید را وارد کنید" },
-                ]}
-              >
-                <InputNumber
-                  min={0}
-                  className="w-full"
-                  formatter={(value) =>
-                    value
-                      ? `${value
-                          .toString()
-                          .replace(/\B(?=(\d{3})+(?!\d))/g, ",")} `
-                      : ""
-                  }
-                />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item
-                name="price"
-                label="قیمت فروش"
-                rules={[
-                  { required: true, message: "لطفاً قیمت فروش را وارد کنید" },
-                ]}
-              >
-                <InputNumber
-                  min={0}
-                  className="w-full"
-                  formatter={(value) =>
-                    value
-                      ? `${value
-                          .toString()
-                          .replace(/\B(?=(\d{3})+(?!\d))/g, ",")} `
-                      : ""
-                  }
-                />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name="off_price" label="قیمت با تخفیف">
-                <InputNumber
-                  min={0}
-                  className="w-full"
-                  formatter={(value) =>
-                    value
-                      ? `${value
-                          .toString()
-                          .replace(/\B(?=(\d{3})+(?!\d))/g, ",")} `
-                      : ""
-                  }
-                />
-              </Form.Item>
-            </Col>
-          </Row> */}
+          
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="upc" label="کد محصول">
@@ -573,9 +518,9 @@ function AddVariationProduct() {
               </Form.Item>
             </Col>
           </Row>
-          <Form.Item name="active" label="فعال" valuePropName="checked">
+          {/* <Form.Item name="active" label="فعال" valuePropName="checked">
             <Switch />
-          </Form.Item>
+          </Form.Item> */}
           <Form.Item
             label="تصاویر"
             rules={[
@@ -596,28 +541,7 @@ function AddVariationProduct() {
               </Button>
             </Upload>
           </Form.Item>
-          <Divider>بخش سئو</Divider>
-          <Form.Item name="seo_title" label="عنوان سئو">
-            <Input />
-          </Form.Item>
-          <Form.Item name="seo_description" label="توضیحات سئو">
-            <TextArea rows={4} />
-          </Form.Item>
-          <Form.Item name="canonical" label="URL Canonical">
-            <Input />
-          </Form.Item>
-          <Row gutter={24}>
-            <Col span={12}>
-              <Form.Item name="follow" label="Follow" valuePropName="checked">
-                <Switch defaultChecked="true" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="index" label="Index" valuePropName="checked">
-                <Switch defaultChecked="true" />
-              </Form.Item>
-            </Col>
-          </Row>
+         
           <Form.Item>
             <Button type="primary" htmlType="submit" loading={loading}>
               افزودن محصول

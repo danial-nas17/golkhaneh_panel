@@ -51,7 +51,7 @@ const ManualOrderPanel = () => {
   const productApi = useMemo(
     () =>
       axios.create({
-        baseURL: 'https://gol-api.qasralanqaa.com/api/v1',
+        baseURL: 'https://gol.digizooom.com/api/v1',
         headers: {
           // اگر توکن لازم دارید، اینجا اضافه کنید:
           // Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -258,6 +258,33 @@ const ManualOrderPanel = () => {
   };
 
   // --- Render Helpers ---
+  // Build readable variation label from attributes with sensible fallbacks
+  const buildVariationLabel = (variation, productTitle) => {
+    if (!variation) return productTitle || "تنوع";
+    const attrs =
+      variation.attribute_varitation ||
+      variation.attribute_variation ||
+      variation.attributes ||
+      [];
+    let parts = [];
+    if (Array.isArray(attrs) && attrs.length) {
+      parts = attrs
+        .map((a) => {
+          const vals = (a.values || [])
+            .map((v) => (v.name || v.value || "").toString().trim())
+            .filter(Boolean)
+            .join("، ");
+          return vals || null;
+        })
+        .filter(Boolean);
+    }
+    if (!parts.length && variation.SKU) {
+      const m = variation.SKU.match(/درجه[_\-\s]*([A-Za-z\u0600-\u06FF]+)/);
+      if (m && m[1]) parts.push(`درجه ${m[1].replace(/[_\-]/g, " ")}`);
+    }
+    const base = productTitle || variation.title || "محصول";
+    return parts.length ? `${base} – ${parts.join(" | ")}` : base;
+  };
   const renderProductSelectors = (box, row) => {
     const selectedProduct = row.product_id ? findProductById(row.product_id) : null;
     const variantList = selectedProduct?.variants || [];
@@ -293,11 +320,14 @@ const ManualOrderPanel = () => {
               disabled={!hasVariants}
               allowClear
             >
-              {variantList.map((v) => (
-                <Option key={v.product_variant_id ?? v.id} value={v.product_variant_id ?? v.id}>
-                  {v.SKU || v.title || `#${v.product_variant_id ?? v.id}`}
-                </Option>
-              ))}
+              {variantList.map((v) => {
+                const value = v.product_variant_id ?? v.id;
+                return (
+                  <Option key={value} value={value}>
+                    {buildVariationLabel(v, selectedProduct?.title)}
+                  </Option>
+                );
+              })}
             </Select>
           </Form.Item>
         </Col>
@@ -384,7 +414,9 @@ const ManualOrderPanel = () => {
         : null;
 
     const productPart = p ? ` | محصول: ${p.title}` : '';
-    const variantPart = variant ? ` | تنوع: ${variant.SKU || variant.title || variant.id}` : '';
+    const variantPart = variant
+      ? ` | تنوع: ${buildVariationLabel(variant, p?.title)}`
+      : '';
 
     if (row.type === 'cut_flower') {
       return `${row.stem_count} ساقه، ${row.flower_count} گل${productPart}${variantPart}`;

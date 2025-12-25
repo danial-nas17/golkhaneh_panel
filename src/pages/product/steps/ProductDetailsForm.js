@@ -99,6 +99,8 @@ const ProductDetailsForm = () => {
           style={{ width: '100%' }}
           placeholder="قیمت"
           min={0}
+          formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+          parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
         />
       </Form.Item>
 
@@ -111,6 +113,8 @@ const ProductDetailsForm = () => {
           style={{ width: '100%' }}
           placeholder="قیمت تخفیف"
           min={0}
+          formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+          parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
         />
       </Form.Item>
 

@@ -10,6 +10,7 @@ import {
   Col,
   Divider,
   message,
+  notification,
   Typography,
   Popconfirm,
   Badge,
@@ -27,6 +28,7 @@ import {
   PrinterOutlined,
   CheckCircleOutlined,
   FieldNumberOutlined,
+  CopyOutlined,
 } from "@ant-design/icons";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../api";
@@ -38,211 +40,62 @@ const { Option } = Select;
 
 // ---------- تنظیمات ثابت ----------
 const COMPANY_LOGO = logo;
+// CSS for invoice printing
 const A6_PRINT_CSS = `
- @page { 
-  size: A6; 
-  margin: 3mm; 
-}
+@page { size: A6; margin: 5mm; }
+* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+body { direction: rtl; font-family: IRANSans, Vazirmatn, Tahoma, Arial, sans-serif; margin: 0; padding: 0; }
+.page { width: 100%; min-height: calc(148mm - 10mm); box-sizing: border-box; page-break-after: always; display: flex; }
+.inv { border: 2px solid #2563eb; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; width: 100%; background: #fff; }
 
-* { 
-  -webkit-print-color-adjust: exact !important; 
-  print-color-adjust: exact !important; 
-}
+/* Header */
+.inv__head { display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #e5e7eb; padding-bottom:6px; margin-bottom:8px; }
+.inv__logo img { height: 50px; max-width: 70px; object-fit: contain; }
+.inv__title { font-size:14px; font-weight:800; color:#1f2937; }
+.inv__boxno { font-weight:900; font-size:16px; color:#dc2626; background:#fee2e2; padding:2px 8px; border-radius:6px; border:1px solid #dc2626; }
 
-body { 
-  direction: rtl; 
-  font-family: IRANSans, Vazirmatn, Tahoma, Arial, sans-serif; 
-  margin: 0;
-  padding: 0;
-}
+/* Info strip */
+.strip { display:grid; grid-template-columns: 1fr; gap:6px; margin-bottom:8px; }
+.chip { background:#f3f4f6; border:1px solid #e5e7eb; border-radius:6px; padding:6px; font-size:11px; }
+.chip b { color:#374151; margin-left:4px; }
 
-.page { 
-  width: 100%; 
-  height: calc(148mm - 6mm); 
-  box-sizing: border-box; 
-  page-break-after: always; 
-  display: flex;
-  flex-direction: column;
-}
+/* Counters row */
+.counters { display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:8px; }
+.counter { background:#eef2ff; border:1px solid #c7d2fe; border-radius:6px; padding:6px; text-align:center; }
+.counter__label { font-size:11px; color:#374151; }
+.counter__val { font-size:13px; font-weight:800; color:#111827; }
 
-.inv-card {
-  border: 2px solid #2563eb;
-  border-radius: 6px;
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  background: #ffffff;
-}
+/* List box */
+.listBox { background:#f9fafb; border:1px solid #e5e7eb; border-radius:6px; padding:6px; margin-bottom:8px; }
+.listBox__title { font-size:11px; font-weight:700; color:#374151; margin-bottom:4px; border-bottom:1px dashed #e5e7eb; padding-bottom:4px; text-align:center; }
+.listBox__item { font-size:10px; padding:3px 6px; background:#fff; border:1px solid #f3f4f6; border-radius:4px; margin-bottom:4px; }
 
-/* Header با لوگو و عنوان */
-.inv-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  padding: 4px 0;
-  border-bottom: 1px solid #e5e7eb;
-}
+/* Footer meta */
+.meta { margin-top:auto; border-top:1px dashed #e5e7eb; padding-top:6px; }
+.meta__tbl { width:100%; border-collapse:collapse; font-size:10px; }
+.meta__tbl td { border:1px solid #e5e7eb; padding:4px 6px; }
+.meta__lbl { background:#f3f4f6; font-weight:600; color:#374151; width:35%; }
+.meta__val { background:#fff; color:#1f2937; }
 
-.inv-logo-container {
-  flex: 0 0 auto;
-}
+.pager { text-align:center; font-size:11px; font-weight:800; color:#111827; margin-top:6px; }
 
-.inv-logo {
-  height: 25px;
-  max-width: 35px;
-  object-fit: contain;
-}
-
-.inv-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: #1f2937;
-  flex: 1;
-  text-align: center;
-}
-
-.box-no {
-  font-weight: 900;
-  font-size: 16px;
-  color: #dc2626;
-  background: #fee2e2;
-  padding: 2px 8px;
-  border-radius: 4px;
-  border: 1px solid #dc2626;
-  flex: 0 0 auto;
-}
-
-/* اطلاعات مهم - مشتری و سفارش */
-.important-info {
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-  border: 1px solid #3b82f6;
-  border-radius: 4px;
-  padding: 6px;
-  margin-bottom: 8px;
-  text-align: center;
-}
-
-.customer-name {
-  font-size: 12px;
-  font-weight: 800;
-  color: #1e40af;
-  margin-bottom: 2px;
-}
-
-.customer-name:before {
-  content: "مشتری: ";
-  font-weight: 600;
-  color: #374151;
-}
-
-.order-code {
-  font-size: 11px;
-  font-weight: 700;
-  color: #059669;
-}
-
-.order-code:before {
-  content: "سفارش: ";
-  font-weight: 600;
-  color: #374151;
-}
-
-/* بخش محصولات */
-.products-section {
-  background: #f9fafb;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  padding: 6px;
-  margin-bottom: 8px;
-  flex: 1;
-}
-
-.products-title {
-  font-size: 10px;
-  font-weight: 700;
-  color: #374151;
-  margin-bottom: 4px;
-  text-align: center;
-  border-bottom: 1px dashed #9ca3af;
-  padding-bottom: 2px;
-}
-
-.products-list {
-  margin-bottom: 4px;
-}
-
-.product-item {
-  font-size: 9px;
-  color: #1f2937;
-  margin-bottom: 2px;
-  padding: 2px 4px;
-  background: white;
-  border-radius: 3px;
-  border: 1px solid #e5e7eb;
-}
-
-.total-summary {
-  font-size: 10px;
-  font-weight: 800;
-  color: #dc2626;
-  text-align: center;
-  background: #fef2f2;
-  border: 1px solid #fca5a5;
-  border-radius: 3px;
-  padding: 3px;
-}
-
-/* جدول اطلاعات اضافی */
-.extra-info {
-  margin-bottom: 8px;
-}
-
-.info-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 9px;
-}
-
-.info-table td {
-  border: 1px solid #d1d5db;
-  padding: 3px 4px;
-}
-
-.info-label {
-  background: #f3f4f6;
-  font-weight: 600;
-  color: #374151;
-  width: 35%;
-  text-align: right;
-}
-
-.info-value {
-  background: white;
-  color: #1f2937;
-  font-weight: 500;
-}
-
-/* Barcode */
+/* ✅ بخش بارکد—دقیقاً مثل قبل نگه داشته شده */
 .barcode-box {
-  margin-top: auto;
+  margin-top: 6px;
   text-align: center;
   padding: 4px 0;
   border-top: 1px solid #e5e7eb;
 }
-
 .barcode-img {
-  width: 80%;
-  max-width: 50mm;
-  height: 8mm;
+  width: 100%;
+  max-width: 80mm;
+  height: 16mm;
   object-fit: contain;
-  margin: 0 auto 2px auto;
+  margin: 0 auto 6px auto;
   display: block;
 }
-
 .serial {
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.5px;
   color: #374151;
@@ -286,21 +139,116 @@ const ManualOrderCreation = () => {
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [orderInfo, setOrderInfo] = useState(null);
+  const [completingOrder, setCompletingOrder] = useState(false);
 
   // برای چاپ فاکتور Batch
   const [completePrintData, setCompletePrintData] = useState(null); // آرایه data از API تکمیل
   const [showInvoicePreview, setShowInvoicePreview] = useState(false);
   const [invoiceHTML, setInvoiceHTML] = useState("");
 
-  // helper: آیا اجازه‌ی ساخت جعبه‌ی بعدی داریم؟
-const canAddAnotherBox = boxes.every(b => b.status === "submitted");
+  // برای انتخاب لوگو قبل از پرینت
+  const [logoConfirmModalVisible, setLogoConfirmModalVisible] = useState(false);
+  const [pendingPrintData, setPendingPrintData] = useState(null);
 
-// Add new box (global)
+  // برای نمایش خطاها
+  const [errorMessages, setErrorMessages] = useState([]);
+  
+  // برای نمایش warning (جعبه‌های ناقص)
+  const [warningMessage, setWarningMessage] = useState(null);
+
+  // Helper functions for invoice generation
+  // تلاش برای پیدا کردن «درجه کیفی» از آبجکت تنوع
+  const extractQualityFromVariation = (variationObj) => {
+    if (!variationObj) return null;
+
+    const attrs =
+      variationObj.attribute_varitation ||
+      variationObj.attribute_variation ||
+      variationObj.attributes ||
+      [];
+
+    if (Array.isArray(attrs)) {
+      const a = attrs.find(
+        (x) =>
+          (x.key && x.key.trim() === "درجه_کیفی") ||
+          (x.name && x.name.includes("درجه"))
+      );
+      const v = a?.values?.[0];
+      const vv = (v?.name || v?.value || "").toString().trim();
+      if (vv) return vv; // مثل «درجه A»
+    }
+
+    // fallback: از SKU الگو را دربیاوریم (مثل: درجه_A ، درجه-A)
+    if (variationObj.SKU) {
+      const m = variationObj.SKU.match(/درجه[_\-\s]*([A-Za-z\u0600-\u06FF]+)/);
+      if (m && m[1]) {
+        return `درجه ${m[1].replace(/[_\-]/g, " ")}`.trim();
+      }
+    }
+
+    return null;
+  };
+
+  // از variation شیء، لیبل نمایشی بساز (نام محصول + ویژگی‌ها)
+  // variation: ممکن است فیلدهای متفاوت داشته باشد (id یا product_variant_id و ...).
+  const buildVariationLabel = (variationObj, productTitle) => {
+    if (!variationObj) return productTitle || "تنوع";
+
+    // 1) تلاش برای خواندن attribute_varitation
+    const attrs =
+      variationObj.attribute_varitation ||
+      variationObj.attribute_variation || // اگر API گاهی این نام را بدهد
+      variationObj.attributes ||
+      [];
+
+    let attrsParts = [];
+    if (Array.isArray(attrs) && attrs.length) {
+      attrsParts = attrs
+        .filter((a) => {
+          // فیلتر کردن attribute‌های مربوط به درجه کیفی
+          const key = (a.key || "").toString().trim();
+          const name = (a.name || "").toString().trim();
+          const isQuality = 
+            key === "درجه_کیفی" || 
+            key.toLowerCase().includes("درجه") ||
+            name.includes("درجه") ||
+            name.toLowerCase().includes("quality");
+          return !isQuality; // فقط attribute‌هایی که درجه نیستند
+        })
+        .map((a) => {
+          const vals = (a.values || [])
+            .map((v) => (v.name || v.value || "").toString().trim())
+            .filter(Boolean)
+            .join("، ");
+          if (!vals) return null;
+          // نمایش کوتاه: فقط مقدارها؛ اگر دوست داشتی "نام: مقدارها" بگذار
+          return vals;
+        })
+        .filter(Boolean);
+    }
+
+    // 2) حذف شده: از SKU درجه را استخراج نمی‌کنیم (در لیبل‌ها نمایش داده نمی‌شود)
+
+    const attrsStr = attrsParts.join(" | ");
+    const baseName = productTitle || variationObj.title || "محصول";
+    return attrsStr ? `${baseName} – ${attrsStr}` : baseName;
+  };
+
+  // اگر از API فقط لیست variationهای ساده داری (مثلاً products[].variants)
+  // آن‌ها را به options خوانا تبدیل کن
+  const variationToOption = (variation, productTitle) => ({
+    value: variation.product_variant_id ?? variation.id, // هر کدام موجود بود
+    label: buildVariationLabel(variation, productTitle),
+  });
+
+  // یک نام محصول کوتاه
+  const shortProductName = (item) =>
+    item?.product?.title || item?.product || item?.product_title || "محصول";
+
+  // حذف نسخه تکراری buildVariationLabel
+
+// Add new box (global) - حذف محدودیت
 const addNewBox = () => {
-  if (!canAddAnotherBox) {
-    message.warning("ابتدا جعبه‌های قبلی را تکمیل کنید، سپس جعبه جدید بسازید.");
-    return;
-  }
   const newBox = {
     id: Date.now(),
     pack_type: null,
@@ -310,6 +258,42 @@ const addNewBox = () => {
   };
   setBoxes((prev) => [...prev, newBox]);
   message.success("جعبه جدید اضافه شد");
+};
+
+
+// کپی جعبه - مکانیزم جدید
+const duplicateBox = (boxId) => {
+  const boxToCopy = boxes.find((b) => b.id === boxId);
+  if (!boxToCopy) return;
+
+  // بررسی شرایط کپی
+  if (boxToCopy.pack_type === "CUT_FLOWER") {
+    // برای شاخه بریده: همه ردیف‌ها باید محصول و تنوع داشته باشند
+    const hasMissingProduct = boxToCopy.rows.some(
+      (row) => !row.product_id || !row.product_variation_id
+    );
+    if (hasMissingProduct) {
+      message.warning(
+        "ابتدا محصول و تنوع هر ردیف را کامل کنید، سپس جعبه را کپی کنید."
+      );
+      return;
+    }
+  }
+  // برای گلدان: در هر زمان می‌توان کپی کرد
+
+  const newBox = {
+    id: Date.now(),
+    pack_type: boxToCopy.pack_type,
+    rows: boxToCopy.rows.map((row) => ({
+      ...row,
+      id: Date.now() + Math.random(), // ID جدید برای هر ردیف
+    })),
+    status: "draft",
+    last_row_no: null,
+  };
+
+  setBoxes((prev) => [...prev, newBox]);
+  message.success("جعبه کپی شد");
 };
 
 
@@ -324,6 +308,26 @@ const addNewBox = () => {
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  // Auto-close error messages after 10 seconds
+  useEffect(() => {
+    if (errorMessages.length > 0) {
+      const timer = setTimeout(() => {
+        setErrorMessages([]);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [errorMessages]);
+
+  // Auto-close warning message after 10 seconds
+  useEffect(() => {
+    if (warningMessage) {
+      const timer = setTimeout(() => {
+        setWarningMessage(null);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [warningMessage]);
 
   const fetchOrderInfo = async () => {
     try {
@@ -418,15 +422,46 @@ const addNewBox = () => {
                   serial_code: "",
                   product_id: null,
                   product_variation_id: null,
+                  stems_count: null,
+                  flowers_total: null,
                 }
               : {
                   stems: 1,
                   flowers_per_stem: 1,
+                  product_id: null,
+                  product_variation_id: null,
                 }),
           };
           return { ...box, rows: [...box.rows, newRow] };
         }
         return box;
+      })
+    );
+  };
+
+  // Duplicate a specific row inside a box
+  const duplicateRowInBox = (boxId, rowId) => {
+    setBoxes((prev) =>
+      prev.map((box) => {
+        if (box.id !== boxId) return box;
+
+        const rowIndex = box.rows.findIndex((row) => row.id === rowId);
+        if (rowIndex === -1) return box;
+
+        const sourceRow = box.rows[rowIndex];
+        const clonedRow = {
+          ...sourceRow,
+          id: Date.now() + Math.random(),
+        };
+
+        return {
+          ...box,
+          rows: [
+            ...box.rows.slice(0, rowIndex + 1),
+            clonedRow,
+            ...box.rows.slice(rowIndex + 1),
+          ],
+        };
       })
     );
   };
@@ -540,124 +575,273 @@ const addNewBox = () => {
   };
 
 // --- Helper: ساخت HTML فاکتورهای A6 ---
-  const buildInvoiceHTML = (orderInfoArg, items) => {
-    const customerName = orderInfoArg?.customer?.first_name || "نامشخص";
-    const orderCode = `#${orderId}`;
+const buildInvoiceHTML = (orderInfoArg, items, includeLogo = true) => {
+  // Use the new batch format for consistency
+  return buildBatchInvoiceHTML(orderInfoArg, items, includeLogo);
+};
 
-    const getPackTypeFa = (t) =>
-      t === "POTTED_PLANT"
-        ? "گلدان"
-        : t === "CUT_FLOWER"
-        ? "شاخه بریده"
-        : "نامشخص";
+// تبدیل اعداد انگلیسی به فارسی
+const toPersianDigits = (num) => {
+  if (num === null || num === undefined) return '';
+  const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+  return String(num).replace(/\d/g, (digit) => persianDigits[parseInt(digit)]);
+};
 
-    const htmlPages = (items || [])
-      .map((box) => {
-        const item = box.item || {};
-        const printMeta = box.print_meta || {};
-        const media = box.media || {};
-        const printedAt = box.printed_at || "";
-        const serial = box.serial_code || "";
+// ساخت HTML برای «چاپ کلی فاکتورها» (labelsData از /labels)
+const buildBatchInvoiceHTML = (orderInfoArg, labelsData, includeLogo = true) => {
+  const customerName =
+    orderInfoArg?.customer?.first_name && orderInfoArg?.customer?.last_name
+      ? `${orderInfoArg.customer.first_name} ${orderInfoArg.customer.last_name}`
+      : orderInfoArg?.customer?.first_name ||
+        orderInfoArg?.customer?.last_name ||
+        "نامشخص";
+  const totalPages = (labelsData || []).length;
 
-        // شماره جعبه ساده (فقط عدد)
-        const boxNo = printMeta.sequence_no || "1";
-        const boxTotal = printMeta.sequence_total || "1";
+  const pages = (labelsData || []).map((label, idx) => {
+    const item = label.item || {};
+    const pm = label.print_meta || {};
+    const potSummary = label.pot_summary || {};
+    const media = label.media || {};
+    const seqNo = pm.sequence_no || idx + 1;
+    const seqTotal = pm.sequence_total || totalPages;
 
-        // ساخت لیست محصولات
-        let productDetails = "";
-        let totalItems = 0;
+    const headerHTML = `
+    <div class="inv__head">
+      ${includeLogo ? `<div class="inv__logo"><img src="${COMPANY_LOGO}" alt="لوگو" /></div>` : '<div class="inv__logo"></div>'}
+      <div class="inv__title">عرفان ارکید</div>
+      <div class="inv__boxno">${toPersianDigits(item.row_no ?? seqNo)}</div>
+    </div>
+  `;
 
-        if (item.pack_type === "POTTED_PLANT" && box.pot_summary?.by_variation) {
-          // برای گلدان از pot_summary استفاده می‌کنیم
-          const variations = box.pot_summary.by_variation;
-          productDetails = variations.map(variation => {
-            totalItems += variation.pot_count;
-            return `<div class="product-item">• ${variation.product_title}: ${variation.pot_count} گلدان</div>`;
-          }).join("");
-        } else if (item.pack_type === "CUT_FLOWER") {
-          // برای شاخه بریده
-          const productName = item.product || "محصول نامشخص";
-          const stems = item.total_stems || 0;
-          const flowers = item.total_flowers || 0;
-          totalItems = flowers;
-          productDetails = `<div class="product-item">• ${productName}: ${stems} شاخه (${flowers} گل)</div>`;
-        }
+    const stripHTML = `
+    <div class="strip">
+      <div class="chip"><b>مشتری:</b> ${customerName}</div>
+    </div>
+  `;
 
-        return `
-    <div class="page">
-      <div class="inv-card">
+    // --- محتوا بر اساس نوع بسته‌بندی
+    let countersHTML = "";
+    let listBoxTitle = "";
+    let listHTML = "";
+
+    if (item.pack_type === "POTTED_PLANT") {
+      // گلدان‌ها
+      let totalPots = 0;
+      const potsArr = item.pots || [];
+      const totalStems = potsArr.reduce(
+        (sum, pot) => sum + (pot.stems_count || 0),
+        0
+      );
+      const totalFlowers = potsArr.reduce(
+        (sum, pot) => sum + (pot.flowers_total || 0),
+        0
+      );
+
+      if (potSummary?.by_variation?.length) {
+        listHTML = potSummary.by_variation
+          .map((v, i) => {
+            totalPots += v.pot_count || 0;
+
+            // اگر v خودش variation داشته باشد می‌توان کیفیت را از آن هم گرفت
+            const vQuality =
+              extractQualityFromVariation(v.product_variation) || "";
+
+            // استخراج pots مربوط به این variation برای نمایش شاخه و گل
+            const matchingPots = (item.pots || []).filter(
+              (pot) =>
+                pot.product?.id === v.product_id &&
+                pot.variation?.product_variant_id === v.variation_id
+            );
+
+            // محاسبه مجموع شاخه و گل برای این variation
+            const variationStems = matchingPots.reduce(
+              (sum, pot) => sum + (pot.stems_count || 0),
+              0
+            );
+            const variationFlowers = matchingPots.reduce(
+              (sum, pot) => sum + (pot.flowers_total || 0),
+              0
+            );
+
+            // ساخت variationLabel مثل حالت شاخه بریده
+            // اول از v.product_variation، اگر نبود از اولین pot variation را می‌گیریم
+            const variationForLabel = v.product_variation || matchingPots[0]?.variation || null;
+            const variationLabel = variationForLabel
+              ? buildVariationLabel(variationForLabel, v.product_title)
+              : v.product_title;
+
+            // سریال گلدان - کامنت شده برای استفاده بعدی
+            // const serialCodes = matchingPots
+            //   .map((pot) => pot.serial_code)
+            //   .filter(Boolean);
+            // const serialText =
+            //   serialCodes.length > 0 ? ` (${serialCodes.join(", ")})` : "";
+
+            return `<div class="listBox__item">${toPersianDigits(i + 1)}. ${variationLabel} – (${toPersianDigits(variationStems)} شاخه، ${toPersianDigits(variationFlowers)} گل)</div>`;
+          })
+          .join("");
+      } else {
+        totalPots = item.total_pots || 0;
+        // برای حالت fallback هم باید از potsArr استفاده کنیم
+        const fallbackStems = potsArr.reduce(
+          (sum, pot) => sum + (pot.stems_count || 0),
+          0
+        );
+        const fallbackFlowers = potsArr.reduce(
+          (sum, pot) => sum + (pot.flowers_total || 0),
+          0
+        );
+        // ساخت variationLabel از اولین pot
+        const fallbackVariation = potsArr[0]?.variation || null;
+        const fallbackProductName = shortProductName(item);
+        const fallbackVariationLabel = fallbackVariation
+          ? buildVariationLabel(fallbackVariation, fallbackProductName)
+          : fallbackProductName;
+        listHTML = `<div class="listBox__item">${toPersianDigits(1)}. ${fallbackVariationLabel} – (${toPersianDigits(fallbackStems)} شاخه، ${toPersianDigits(fallbackFlowers)} گل)</div>`;
+      }
+
+      countersHTML = `
+      <div class="counters">
+        <div class="counter">
+          <div class="counter__label">تعداد گل</div>
+          <div class="counter__val">${toPersianDigits(totalFlowers)}</div>
+        </div>
+        <div class="counter">
+          <div class="counter__label">تعداد شاخه</div>
+          <div class="counter__val">${toPersianDigits(totalStems)}</div>
+        </div>
+      </div>
+    `;
+      listBoxTitle = "لیست گلدان‌ها";
+    } else if (item.pack_type === "CUT_FLOWER") {
+      // شاخه بریده - با تجمیع خطوط یکسان
+      const stems = item.total_stems || 0;
+      const flowers = item.total_flowers || 0;
+
+      // تجمیع خطوط بر اساس product + variation
+      const lines = item.lines || [];
+      const groupedLines = new Map();
+      
+      for (const line of lines) {
+        const productName = typeof line.product === 'string' ? line.product : line.product?.title || "محصول";
+        const variationId = line.product_variation_id?.product_variant_id || line.variation?.product_variant_id;
+        const key = `${productName}::${variationId}`;
         
-       <!-- Header -->
-        <div class="inv-head">
-          <div class="inv-logo-container">
-            <img class="inv-logo" src="${COMPANY_LOGO}" alt="لوگو شرکت" />
-          </div>
-          <div class="inv-title">فاکتور</div>
-          <div class="box-no">${boxNo}</div>
-        </div>
+        if (!groupedLines.has(key)) {
+          groupedLines.set(key, {
+            productName,
+            variation: line.product_variation_id || line.variation,
+            stems: 0,
+            flowers: 0,
+          });
+        }
+        
+        const group = groupedLines.get(key);
+        group.stems += line.stems_count || line.line_total_stems || 0;
+        group.flowers += line.line_total_flowers || (line.stems_count || 0) * (line.flowers_per_stem || 0);
+      }
 
-        <!-- مشتری و سفارش (برجسته) -->
-        <div class="important-info">
-          <div class="customer-name">${customerName}</div>
-          <div class="order-code">${orderCode}</div>
-        </div>
+      // ساخت لیست از گروه‌های تجمیع شده
+      if (groupedLines.size > 0) {
+        listHTML = Array.from(groupedLines.values())
+          .map((group, i) => {
+            const variationLabel = group.variation ? buildVariationLabel(group.variation, group.productName) : group.productName;
+            return `<div class="listBox__item">${toPersianDigits(i + 1)}. ${variationLabel} – (${toPersianDigits(group.stems)} شاخه، ${toPersianDigits(group.flowers)} گل)</div>`;
+          })
+          .join("");
+      } else {
+        // fallback: اگر lines نداشتیم
+        const line = `${shortProductName(item)} – ${flowers ? `(${toPersianDigits(stems)} شاخه، ${toPersianDigits(flowers)} گل)` : `${toPersianDigits(stems)} شاخه`}`;
+      listHTML = `<div class="listBox__item">${line}</div>`;
+      }
 
-        <!-- جزییات محصولات -->
-        <div class="products-section">
-          <div class="products-title">جزییات محصولات:</div>
-          <div class="products-list">
-            ${productDetails}
-          </div>
-          <div class="total-summary">
-            مجموع: ${totalItems} ${item.pack_type === "POTTED_PLANT" ? "گلدان" : "گل"}
-          </div>
+      countersHTML = `
+      <div class="counters">
+        <div class="counter">
+          <div class="counter__label">تعداد گل</div>
+          <div class="counter__val">${toPersianDigits(flowers)}</div>
         </div>
+        <div class="counter">
+          <div class="counter__label">تعداد شاخه</div>
+          <div class="counter__val">${toPersianDigits(stems)}</div>
+        </div>
+      </div>
+    `;
+      listBoxTitle = "گل‌های موجود";
+    } else {
+      listHTML = `<div class="listBox__item">نوع بسته‌بندی نامشخص</div>`;
+      listBoxTitle = "اقلام";
+    }
 
-        <!-- اطلاعات اضافی -->
-        <div class="extra-info">
-          <table class="info-table">
-            <tr>
-              <td class="info-label">اپراتور:</td>
-              <td class="info-value">${item.qc_controller || "-"}</td>
-            </tr>
-            <tr>
-              <td class="info-label">تاریخ:</td>
-              <td class="info-value">${printedAt}</td>
-            </tr>
-            <tr>
-              <td class="info-label">جعبه:</td>
-              <td class="info-value">${boxNo} از ${boxTotal}</td>
-            </tr>
-          </table>
-        </div>
+    const listBoxHTML = `
+    <div class="listBox">
+      <div class="listBox__title">${listBoxTitle}</div>
+      ${listHTML || `<div class="listBox__item">موردی ثبت نشده</div>`}
+    </div>
+  `;
 
-        <!-- Barcode -->
-        <div class="barcode-box">
-          <img class="barcode-img" src="${
-            media.barcode_url || ""
-          }" onerror="this.style.display='none'"/>
-          <div class="serial">${serial}</div>
-        </div>
+    const footerHTML = `
+    <div class="meta">
+      <table class="meta__tbl">
+        <tr>
+          <td class="meta__lbl">اپراتور ثبت محصول</td>
+          <td class="meta__val">${
+            orderInfoArg?.packed_by?.first_name
+              ? `${orderInfoArg.packed_by.first_name}${
+                  orderInfoArg.packed_by.last_name
+                    ? " " + orderInfoArg.packed_by.last_name
+                    : ""
+                }`
+              : "-"
+          }</td>
+        </tr>
+        <tr>
+          <td class="meta__lbl">ناظر کیفی</td>
+          <td class="meta__val">${item.qc_controller || "-"}</td>
+        </tr>
+      </table>
+    </div>
+    <div class="pager">شماره ${toPersianDigits(seqNo)} از ${toPersianDigits(seqTotal)}</div>
+  `;
+
+    // ✅ باکس بارکد مثل قبل در انتهای کارت
+    const barcodeHTML = `
+    <div class="barcode-box">
+      <img class="barcode-img" src="${
+        media?.barcode_url || ""
+      }" onerror="this.style.display='none'"/>
+      <div class="serial">${label.serial_code || ""}</div>
+    </div>
+  `;
+
+    return `
+    <div class="page">
+      <div class="inv">
+        ${headerHTML}
+        ${stripHTML}
+        ${countersHTML}
+        ${listBoxHTML}
+        ${footerHTML}
+        ${barcodeHTML}
       </div>
     </div>
   `;
-      })
-      .join("\n");
+  });
 
-    return `
-      <!doctype html>
-      <html lang="fa" dir="rtl">
-        <head>
-          <meta charset="utf-8"/>
-          <title>چاپ فاکتور</title>
-          <style>${A6_PRINT_CSS}</style>
-        </head>
-        <body>
-          ${htmlPages}
-        </body>
-      </html>
-    `;
-  };
+  return `
+  <!doctype html>
+  <html lang="fa" dir="rtl">
+    <head>
+      <meta charset="utf-8"/>
+      <title>چاپ لیبل های سفارش</title>
+      <style>${A6_PRINT_CSS}</style>
+    </head>
+    <body>
+      ${pages.join("\n")}
+    </body>
+  </html>
+`;
+};
 
   // --- Helper: ساخت HTML برچسب row_no (دو تا 5×5 در A6) ---
   const buildRowNoStickersHTML = (rowNo) => {
@@ -683,112 +867,228 @@ const addNewBox = () => {
   };
 
   // Submit box data to backend
-  const submitBoxData = async (boxId) => {
-    const box = boxes.find((b) => b.id === boxId);
-    if (!box || box.rows.length === 0) {
-      message.warning("لطفا حداقل یک ردیف به جعبه اضافه کنید");
-      return;
+  // Submit box data to backend
+// Submit box data to backend
+// Submit box data to backend
+const submitBoxData = async (boxId) => {
+  const box = boxes.find((b) => b.id === boxId);
+  if (!box || box.rows.length === 0) {
+    message.warning("لطفا حداقل یک ردیف به جعبه اضافه کنید");
+    return;
+  }
+
+  // Validate rows based on pack type
+  const invalidRows = box.rows.filter((row) => {
+    if (box.pack_type === "POTTED_PLANT") {
+      return !row.serial_code || !row.product_id || !row.product_variation_id || 
+             row.stems_count === null || row.stems_count === undefined ||
+             row.flowers_total === null || row.flowers_total === undefined;
+    } else if (box.pack_type === "CUT_FLOWER") {
+      return (
+        !row.product_id ||
+        !row.product_variation_id ||
+        !row.stems ||
+        !row.flowers_per_stem ||
+        row.stems < 1 ||
+        row.flowers_per_stem < 1
+      );
+    }
+    return true;
+  });
+
+  if (invalidRows.length > 0) {
+    message.error("لطفا تمام فیلدهای مورد نیاز را پر کنید");
+    return;
+  }
+
+  try {
+    setLoading((prev) => ({ ...prev, [boxId]: true }));
+
+    let payload;
+
+    if (box.pack_type === "POTTED_PLANT") {
+      payload = {
+        pack_type: "POTTED_PLANT",
+        qc_controller: orderInfo?.qc_controller || "QC-Shift-A",
+        pots: box.rows.map((row) => ({
+          serial_code: row.serial_code,
+          product_id: row.product_id,
+          product_variation_id: row.product_variation_id,
+          stems_count: row.stems_count,
+          flowers_total: row.flowers_total,
+        })),
+      };
+    } else if (box.pack_type === "CUT_FLOWER") {
+      payload = {
+        pack_type: "CUT_FLOWER",
+        lines: box.rows.map((row) => ({
+          stems: row.stems,
+          flowers_per_stem: row.flowers_per_stem,
+          product_id: row.product_id,
+          product_variation_id: row.product_variation_id,
+        })),
+      };
     }
 
-    // Validate rows based on pack type
-    const invalidRows = box.rows.filter((row) => {
-      if (box.pack_type === "POTTED_PLANT") {
-        return !row.serial_code || !row.product_id || !row.product_variation_id;
-      } else if (box.pack_type === "CUT_FLOWER") {
-        return (
-          !row.stems ||
-          !row.flowers_per_stem ||
-          row.stems < 1 ||
-          row.flowers_per_stem < 1
-        );
+    const resp = await api.post(
+      `/panel/packaging-orders/${orderId}/items`,
+      payload
+    );
+
+    const lastRowNo = resp?.data?.data?.row_no ?? null;
+
+    setBoxes((prev) =>
+      prev.map((b) =>
+        b.id === boxId
+          ? { ...b, status: "submitted", last_row_no: lastRowNo }
+          : b
+      )
+    );
+
+    message.success(
+      `${getBoxName(
+        boxes.findIndex((b) => b.id === boxId)
+      )} با موفقیت ارسال شد`
+    );
+   } catch (error) {
+     console.error("Error submitting box:", error);
+     
+     if (error.response) {
+       const { status, data } = error.response;
+       
+       if (status === 422 && data?.data?.errors) {
+         const validationErrors = data.data.errors;
+         const errorKeys = Object.keys(validationErrors);
+         
+         if (errorKeys.length > 0) {
+           const allErrors = [];
+           
+           errorKeys.forEach(field => {
+             const errors = validationErrors[field];
+             if (Array.isArray(errors) && errors.length > 0) {
+               errors.forEach(errorMsg => {
+                 const decodedMsg = errorMsg.replace(/\\u[\dA-F]{4}/gi, (match) => {
+                   return String.fromCharCode(parseInt(match.replace(/\\u/g, ''), 16));
+                 });
+                 allErrors.push(decodedMsg);
+               });
+             }
+           });
+           
+          if (allErrors.length > 0) {
+            // Show errors in custom UI
+            setErrorMessages(allErrors);
+          }
+         }
+      } else {
+        const errorMessage = data?.message || 'خطا در ارسال جعبه';
+        const decodedMessage = errorMessage.replace(/\\u[\dA-F]{4}/gi, (match) => {
+          return String.fromCharCode(parseInt(match.replace(/\\u/g, ''), 16));
+        });
+        setErrorMessages([decodedMessage]);
       }
-      return true;
-    });
-
-    if (invalidRows.length > 0) {
-      message.error("لطفا تمام فیلدهای مورد نیاز را پر کنید");
-      return;
+    } else {
+      setErrorMessages(['خطای شبکه - لطفاً اتصال اینترنت خود را بررسی کنید']);
     }
-
-    try {
-      setLoading((prev) => ({ ...prev, [boxId]: true }));
-
-      let payload;
-
-      if (box.pack_type === "POTTED_PLANT") {
-        payload = {
-          pack_type: "POTTED_PLANT",
-          qc_controller: orderInfo?.qc_controller || "QC-Shift-A",
-          pot_type: "سرامیک",
-          pots: box.rows.map((row) => ({
-            serial_code: row.serial_code,
-            product_id: row.product_id,
-            product_variation_id: row.product_variation_id,
-          })),
-        };
-      } else if (box.pack_type === "CUT_FLOWER") {
-        payload = {
-          pack_type: "CUT_FLOWER",
-          product_id: box.product_id,
-          product_variation_id: box.product_variation_id,
-          lines: box.rows.map((row) => ({
-            stems: row.stems,
-            flowers_per_stem: row.flowers_per_stem,
-          })),
-        };
-      }
-
-      const resp = await api.post(
-        `/panel/packaging-orders/${orderId}/items`,
-        payload
-      );
-
-      // ← تغییر مهم: گرفتن row_no از ریسپانس
-      const lastRowNo = resp?.data?.data?.row_no ?? null;
-
-      // Update box status to submitted + ذخیره row_no برای پرینت برچسب
-      setBoxes((prev) =>
-        prev.map((b) =>
-          b.id === boxId
-            ? { ...b, status: "submitted", last_row_no: lastRowNo }
-            : b
-        )
-      );
-
-      message.success(
-        `${getBoxName(
-          boxes.findIndex((b) => b.id === boxId)
-        )} با موفقیت ارسال شد`
-      );
-    } catch (error) {
-      // Use the unified error handler
-      const errorResult = UnifiedErrorHandler.handleApiError(error, null, {
-        showValidationMessages: true,  // Show validation messages for this case
-        showGeneralMessages: true,
-        defaultMessage: "خطا در ارسال جعبه"
-      });
-      
-      console.error("Error submitting box:", errorResult);
-    } finally {
-      setLoading((prev) => ({ ...prev, [boxId]: false }));
-    }
-  };
+   } finally {
+     setLoading((prev) => ({ ...prev, [boxId]: false }));
+   }
+ };
 
   // --- تکمیل سفارش و چاپ فاکتورهای A6 ---
   const handleCompleteOrder = async () => {
+    if (completingOrder) return; // Prevent multiple clicks
+
+    // اعتبارسنجی جعبه‌های ناقص
+    console.log("همه جعبه‌ها:", boxes);
+    
+    const incompleteBoxes = boxes.filter(box => {
+      if (box.status === "submitted") return false; // جعبه‌های تکمیل شده را نادیده بگیر
+      
+      console.log(`بررسی جعبه ${box.id}:`, {
+        pack_type: box.pack_type,
+        product_id: box.product_id,
+        product_variation_id: box.product_variation_id,
+        rows: box.rows,
+        status: box.status
+      });
+      
+      // بررسی جعبه‌های ناقص
+      if (!box.pack_type) {
+        console.log(`جعبه ${box.id} ناقص: نوع بسته‌بندی انتخاب نشده`);
+        return true; // نوع بسته‌بندی انتخاب نشده
+      }
+      if (!box.rows || box.rows.length === 0) {
+        console.log(`جعبه ${box.id} ناقص: هیچ ردیفی ندارد`);
+        return true; // هیچ ردیفی ندارد
+      }
+      
+      if (box.pack_type === "CUT_FLOWER") {
+        // بررسی ردیف‌ها - باید مقادیر معتبر و انتخاب محصول/تنوع داشته باشند
+        const hasInvalidRows = box.rows.some(row => {
+          const missingProduct = !row.product_id || !row.product_variation_id;
+          const invalidCounts =
+            !row.stems || !row.flowers_per_stem || row.stems < 1 || row.flowers_per_stem < 1;
+
+          if (missingProduct || invalidCounts) {
+            console.log(`جعبه ${box.id} ناقص: ردیف نامعتبر:`, row);
+          }
+          return missingProduct || invalidCounts;
+        });
+        return hasInvalidRows;
+      } else if (box.pack_type === "POTTED_PLANT") {
+        // برای گلدان: بررسی ردیف‌ها
+        const hasInvalidRows = box.rows.some(row => {
+          const isInvalid = !row.product_id || 
+            !row.product_variation_id || 
+            !row.serial_code || 
+            row.serial_code.trim() === "" ||
+            row.stems_count === null || row.stems_count === undefined ||
+            row.flowers_total === null || row.flowers_total === undefined;
+          if (isInvalid) {
+            console.log(`جعبه ${box.id} ناقص: ردیف گلدان نامعتبر:`, row);
+          }
+          return isInvalid;
+        });
+        return hasInvalidRows;
+      }
+      
+      return false;
+    });
+
+    if (incompleteBoxes.length > 0) {
+      console.log("جعبه‌های ناقص:", incompleteBoxes);
+      
+      // ساخت لیست نام جعبه‌های ناقص
+      const incompleteBoxNames = incompleteBoxes.map((box, idx) => {
+        const boxIndex = boxes.findIndex(b => b.id === box.id);
+        return getBoxName(boxIndex);
+      });
+      
+      // نمایش پیام به کاربر با UI سفارشی
+      setWarningMessage({
+        title: `شما ${incompleteBoxes.length} جعبه ناقص دارید`,
+        boxes: incompleteBoxNames
+      });
+      
+      return;
+    }
+
     try {
+      setCompletingOrder(true);
       message.loading({ content: "در حال تکمیل سفارش...", key: "complete" });
       const resp = await api.post(
         `/panel/packaging-orders/${orderId}/complete`
       );
       const arr = resp?.data?.data || [];
       setCompletePrintData(arr);
-
-      const html = buildInvoiceHTML(orderInfo, arr);
-      setInvoiceHTML(html);
-      setShowInvoicePreview(true);
+      setPendingPrintData(arr);
+      
+      // نمایش مودال تایید لوگو
+      setLogoConfirmModalVisible(true);
+      
       message.success({
-        content: "سفارش تکمیل شد. پیش‌نمایش آماده است.",
+        content: "سفارش تکمیل شد.",
         key: "complete",
       });
     } catch (error) {
@@ -798,190 +1098,173 @@ const addNewBox = () => {
         showGeneralMessages: true,
         defaultMessage: "خطا در تکمیل سفارش"
       });
-      
+
       message.error({ content: errorResult.message, key: "complete" });
       console.error("Error completing order:", errorResult);
+    } finally {
+      setCompletingOrder(false);
     }
+  };
+
+  const executePrintInvoices = (includeLogo) => {
+    const html = buildInvoiceHTML(orderInfo, pendingPrintData, includeLogo);
+    setInvoiceHTML(html);
+    setShowInvoicePreview(true);
   };
 
   const renderPottedPlantForm = (box, row) => (
-    <Row gutter={16}>
-      <Col span={8}>
-        <Form.Item label="کد سریال">
-          <Input
-            value={row.serial_code || ""}
-            onChange={(e) =>
-              updateRowData(box.id, row.id, "serial_code", e.target.value)
-            }
-            placeholder="مثال: P-08163796"
-          />
-        </Form.Item>
-      </Col>
-      <Col span={8}>
-        <Form.Item label="محصول">
-          <Select
-            value={row.product_id || undefined}
-            onChange={(value) => {
-              // set product and reset variation
-              setBoxes((prevBoxes) =>
-                prevBoxes.map((b) => {
-                  if (b.id === box.id) {
-                    return {
-                      ...b,
-                      rows: b.rows.map((r) =>
-                        r.id === row.id
-                          ? {
-                              ...r,
-                              product_id: value,
-                              product_variation_id: null,
-                            }
-                          : r
-                      ),
-                    };
-                  }
-                  return b;
-                })
-              );
-            }}
-            placeholder="انتخاب محصول"
-            loading={loadingProducts}
-            style={{ width: "100%" }}
-            showSearch
-            filterOption={(input, option) =>
-              option?.children
-                ?.toString()
-                ?.toLowerCase()
-                ?.indexOf(input.toLowerCase()) >= 0
-            }
-          >
-            {products.map((product) => (
-              <Option key={product.id} value={product.id}>
-                {product.title}
-              </Option>
-            ))}
-          </Select>
-        </Form.Item>
-      </Col>
-      <Col span={8}>
-        <Form.Item label="تنوع">
-          <Select
-            value={row.product_variation_id || undefined}
-            onChange={(value) =>
-              updateRowData(box.id, row.id, "product_variation_id", value)
-            }
-            placeholder="انتخاب تنوع"
-            style={{ width: "100%" }}
-            disabled={!row.product_id}
-            showSearch
-            filterOption={(input, option) =>
-              option?.children
-                ?.toString()
-                ?.toLowerCase()
-                ?.indexOf(input.toLowerCase()) >= 0
-            }
-            notFoundContent={
-              row.product_id ? "تنوعی یافت نشد" : "ابتدا محصول را انتخاب کنید"
-            }
-          >
-            {row.product_id &&
-              getVariationsForProduct(row.product_id).map((variation) => (
-                <Option
-                  key={variation.product_variant_id}
-                  value={variation.product_variant_id}
-                >
-                  {variation.SKU || `تنوع ${variation.product_variant_id}`}
-                </Option>
-              ))}
-          </Select>
-        </Form.Item>
-      </Col>
-    </Row>
-  );
-
-  const renderCutFlowerForm = (box, row) => (
-    <Row gutter={16}>
-      <Col span={12}>
-        <Form.Item label="تعداد شاخه">
-          <InputNumber
-            min={1}
-            value={row.stems}
-            onChange={(value) => updateRowData(box.id, row.id, "stems", value)}
-            placeholder="تعداد شاخه"
-            style={{ width: "100%" }}
-          />
-        </Form.Item>
-      </Col>
-      <Col span={12}>
-        <Form.Item label="گل در هر شاخه">
-          <InputNumber
-            min={1}
-            value={row.flowers_per_stem}
-            onChange={(value) =>
-              updateRowData(box.id, row.id, "flowers_per_stem", value)
-            }
-            placeholder="گل در هر شاخه"
-            style={{ width: "100%" }}
-          />
-        </Form.Item>
-      </Col>
-    </Row>
-  );
-
-  // پرینت برچسب row_no برای یک جعبه
-  const handlePrintRowNo = (rowNo) => {
-    if (rowNo === undefined || rowNo === null) {
-      message.warning("row_no برای این جعبه موجود نیست");
-      return;
-    }
-    printInIframe(buildRowNoStickersHTML(rowNo));
-  };
-
-  const renderBoxContent = (box, boxIndex) => {
-    if (!box.pack_type) {
-      return (
-        <div style={{ padding: "40px", textAlign: "center", color: "#999" }}>
-          <GiftOutlined
-            style={{ fontSize: 32, marginBottom: 16, color: "#d9d9d9" }}
-          />
-          <div>لطفا نوع جعبه را انتخاب کنید</div>
-        </div>
-      );
-    }
-
-    return (
-      <>
-        {box.pack_type === "CUT_FLOWER" && (
-          <div
-            style={{
-              marginBottom: 24,
-              padding: 16,
-              backgroundColor: "#f0f8ff",
-              borderRadius: 8,
-              border: "1px solid #91caff",
-            }}
-          >
-            <Text
-              strong
-              style={{ color: "#1677ff", marginBottom: 12, display: "block" }}
-            >
-              تنظیمات کلی برای شاخه بریده
-            </Text>
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item label="محصول">
-                  <Select
-                    value={box.product_id}
-                    onChange={(value) => {
-                      setBoxes((prev) =>
-                        prev.map((b) =>
-                          b.id === box.id
+    <>
+      <Row gutter={16}>
+        <Col span={8}>
+          <Form.Item label="کد سریال">
+            <Input
+              value={row.serial_code || ""}
+              onChange={(e) =>
+                updateRowData(box.id, row.id, "serial_code", e.target.value)
+              }
+              placeholder="مثال: P-08163796"
+              disabled={box.status === "submitted"}
+            />
+          </Form.Item>
+        </Col>
+        <Col span={8}>
+          <Form.Item label="محصول">
+            <Select
+              value={row.product_id || undefined}
+              onChange={(value) => {
+                // set product and reset variation
+                setBoxes((prevBoxes) =>
+                  prevBoxes.map((b) => {
+                    if (b.id === box.id) {
+                      return {
+                        ...b,
+                        rows: b.rows.map((r) =>
+                          r.id === row.id
                             ? {
-                                ...b,
+                                ...r,
                                 product_id: value,
                                 product_variation_id: null,
                               }
-                            : b
-                        )
+                            : r
+                        ),
+                      };
+                    }
+                    return b;
+                  })
+                );
+              }}
+              placeholder="انتخاب محصول"
+              loading={loadingProducts}
+              style={{ width: "100%" }}
+              showSearch
+              filterOption={(input, option) =>
+                option?.children
+                  ?.toString()
+                  ?.toLowerCase()
+                  ?.indexOf(input.toLowerCase()) >= 0
+              }
+            >
+              {products.map((product) => (
+                <Option key={product.id} value={product.id}>
+                  {product.title}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </Col>
+        <Col span={8}>
+          <Form.Item label="تنوع">
+            <Select
+              value={row.product_variation_id || undefined}
+              onChange={(value) =>
+                updateRowData(box.id, row.id, "product_variation_id", value)
+              }
+              placeholder="انتخاب تنوع"
+              style={{ width: "100%" }}
+              disabled={!row.product_id}
+              showSearch
+              filterOption={(input, option) =>
+                option?.children
+                  ?.toString()
+                  ?.toLowerCase()
+                  ?.indexOf(input.toLowerCase()) >= 0
+              }
+              notFoundContent={
+                row.product_id ? "تنوعی یافت نشد" : "ابتدا محصول را انتخاب کنید"
+              }
+            >
+              {row.product_id &&
+                getVariationsForProduct(row.product_id).map((variation) => (
+                  <Option
+                    key={variation.product_variant_id}
+                    value={variation.product_variant_id}
+                  >
+                    {buildVariationLabel(
+                      variation,
+                      (products.find((p) => p.id === row.product_id) || {}).title
+                    )}
+                  </Option>
+                ))}
+            </Select>
+          </Form.Item>
+        </Col>
+      </Row>
+      <Row gutter={16}>
+        <Col span={12}>
+          <Form.Item label="تعداد شاخه">
+            <InputNumber
+              min={0}
+              value={row.stems_count}
+              onChange={(value) => updateRowData(box.id, row.id, "stems_count", value)}
+              placeholder="تعداد شاخه"
+              style={{ width: "100%" }}
+              disabled={box.status === "submitted"}
+            />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item label="تعداد گل">
+            <InputNumber
+              min={0}
+              value={row.flowers_total}
+              onChange={(value) => updateRowData(box.id, row.id, "flowers_total", value)}
+              placeholder="تعداد گل"
+              style={{ width: "100%" }}
+              disabled={box.status === "submitted"}
+            />
+          </Form.Item>
+        </Col>
+      </Row>
+    </>
+  );
+
+  const renderCutFlowerForm = (box, row) => (
+    <>
+    <Row gutter={16}>
+      <Col span={12}>
+                <Form.Item label="محصول">
+                  <Select
+              value={row.product_id || undefined}
+                    onChange={(value) => {
+                // set product and reset variation
+                setBoxes((prevBoxes) =>
+                  prevBoxes.map((b) => {
+                    if (b.id === box.id) {
+                      return {
+                                ...b,
+                        rows: b.rows.map((r) =>
+                          r.id === row.id
+                            ? {
+                                ...r,
+                                product_id: value,
+                                product_variation_id: null,
+                              }
+                            : r
+                        ),
+                      };
+                    }
+                    return b;
+                  })
                       );
                     }}
                     placeholder="انتخاب محصول"
@@ -1003,22 +1286,16 @@ const addNewBox = () => {
                   </Select>
                 </Form.Item>
               </Col>
-              <Col span={12}>
+        <Col span={12}>
                 <Form.Item label="تنوع">
                   <Select
-                    value={box.product_variation_id}
-                    onChange={(value) => {
-                      setBoxes((prev) =>
-                        prev.map((b) =>
-                          b.id === box.id
-                            ? { ...b, product_variation_id: value }
-                            : b
-                        )
-                      );
-                    }}
+              value={row.product_variation_id || undefined}
+              onChange={(value) =>
+                updateRowData(box.id, row.id, "product_variation_id", value)
+              }
                     placeholder="انتخاب تنوع"
                     style={{ width: "100%" }}
-                    disabled={!box.product_id}
+              disabled={!row.product_id}
                     showSearch
                     filterOption={(input, option) =>
                       option?.children
@@ -1026,25 +1303,79 @@ const addNewBox = () => {
                         ?.toLowerCase()
                         ?.indexOf(input.toLowerCase()) >= 0
                     }
-                  >
-                    {getVariationsForProduct(box.product_id).map(
-                      (variation) => (
+              notFoundContent={
+                row.product_id ? "تنوعی یافت نشد" : "ابتدا محصول را انتخاب کنید"
+              }
+            >
+              {row.product_id &&
+                getVariationsForProduct(row.product_id).map((variation) => (
                         <Option
-                          key={variation.product_variant_id}
-                          value={variation.product_variant_id}
+                    key={variation.product_variant_id ?? variation.id}
+                    value={variation.product_variant_id ?? variation.id}
                         >
-                          {variation.SKU ||
-                            `تنوع ${variation.product_variant_id}`}
-                        </Option>
-                      )
+                    {buildVariationLabel(
+                      variation,
+                      (products.find((p) => p.id === row.product_id) || {}).title
                     )}
+                        </Option>
+                ))}
                   </Select>
                 </Form.Item>
               </Col>
             </Row>
-          </div>
-        )}
 
+      <Row gutter={16}>
+        <Col span={12}>
+          <Form.Item label="تعداد شاخه">
+            <InputNumber
+              min={1}
+              value={row.stems}
+              onChange={(value) => updateRowData(box.id, row.id, "stems", value)}
+              placeholder="تعداد شاخه"
+              style={{ width: "100%" }}
+            />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item label="گل در هر شاخه">
+            <InputNumber
+              min={1}
+              value={row.flowers_per_stem}
+              onChange={(value) =>
+                updateRowData(box.id, row.id, "flowers_per_stem", value)
+              }
+              placeholder="گل در هر شاخه"
+              style={{ width: "100%" }}
+            />
+          </Form.Item>
+        </Col>
+      </Row>
+    </>
+  );
+
+  // پرینت برچسب row_no برای یک جعبه
+  const handlePrintRowNo = (rowNo) => {
+    if (rowNo === undefined || rowNo === null) {
+      message.warning("row_no برای این جعبه موجود نیست");
+      return;
+    }
+    printInIframe(buildRowNoStickersHTML(rowNo));
+  };
+
+  const renderBoxContent = (box, boxIndex) => {
+    if (!box.pack_type) {
+      return (
+        <div style={{ padding: "40px", textAlign: "center", color: "#999" }}>
+          <GiftOutlined
+            style={{ fontSize: 32, marginBottom: 16, color: "#d9d9d9" }}
+          />
+          <div>لطفا نوع جعبه را انتخاب کنید</div>
+          </div>
+      );
+    }
+
+    return (
+      <>
         {box.rows.map((row, rowIndex) => (
           <Card
             key={row.id}
@@ -1073,15 +1404,27 @@ const addNewBox = () => {
               </Space>
             }
             extra={
-              <Button
-                danger
-                size="small"
-                icon={<MinusOutlined />}
-                onClick={() => removeRowFromBox(box.id, row.id)}
-                style={{ borderRadius: 6 }}
-              >
-                حذف
-              </Button>
+              <Space>
+                <Button
+                  danger
+                  size="small"
+                  icon={<MinusOutlined />}
+                  onClick={() => removeRowFromBox(box.id, row.id)}
+                  style={{ borderRadius: 6 }}
+                  disabled={box.status === "submitted"}
+                >
+                  حذف
+                </Button>
+                <Button
+                  size="small"
+                  icon={<CopyOutlined />}
+                  onClick={() => duplicateRowInBox(box.id, row.id)}
+                  style={{ borderRadius: 6 }}
+                  disabled={box.status === "submitted"}
+                >
+                  کپی ردیف
+                </Button>
+              </Space>
             }
           >
             {box.pack_type === "POTTED_PLANT" &&
@@ -1133,11 +1476,162 @@ const addNewBox = () => {
   return (
     <div
       style={{
-        padding: "24px",
+        padding: "16px",
         backgroundColor: "#f5f7fa",
         minHeight: "100vh",
       }}
+      className="responsive-container"
     >
+      {/* Custom Error Display */}
+      {errorMessages.length > 0 && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          left: '20px',
+          zIndex: 9999,
+          maxWidth: '500px',
+          margin: '0 auto'
+        }}>
+          <div style={{
+            background: '#fff',
+            borderRadius: '8px',
+            padding: '16px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            border: '1px solid #ff4d4f'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '12px'
+            }}>
+              <span style={{
+                color: '#ff4d4f',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                fontFamily: 'MyCustomFont, sans-serif'
+              }}>
+                خطا
+              </span>
+              <button
+                onClick={() => setErrorMessages([])}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#999',
+                  fontSize: '20px',
+                  cursor: 'pointer',
+                  padding: '0',
+                  width: '24px',
+                  height: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div>
+              {errorMessages.map((msg, idx) => (
+                <div 
+                  key={idx}
+                  style={{
+                    padding: '8px 0',
+                    color: '#262626',
+                    fontSize: '14px',
+                    lineHeight: '1.6',
+                    fontFamily: 'MyCustomFont, sans-serif',
+                    borderBottom: idx < errorMessages.length - 1 ? '1px solid #f0f0f0' : 'none'
+                  }}
+                >
+                  {errorMessages.length > 1 && `${idx + 1}. `}{msg}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Custom Warning Display */}
+      {warningMessage && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          left: '20px',
+          zIndex: 9999,
+          maxWidth: '500px',
+          margin: '0 auto'
+        }}>
+          <div style={{
+            background: '#fff',
+            borderRadius: '8px',
+            padding: '16px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            border: '1px solid #faad14'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '12px'
+            }}>
+              <span style={{
+                color: '#faad14',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                fontFamily: 'MyCustomFont, sans-serif'
+              }}>
+                ⚠️ {warningMessage.title}
+              </span>
+              <button
+                onClick={() => setWarningMessage(null)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#999',
+                  fontSize: '20px',
+                  cursor: 'pointer',
+                  padding: '0',
+                  width: '24px',
+                  height: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{
+              fontFamily: 'MyCustomFont, sans-serif',
+              fontSize: '14px',
+              lineHeight: '1.8',
+              color: '#262626'
+            }}>
+              <p style={{ marginBottom: '12px' }}>
+                لطفاً ابتدا آن‌ها را تکمیل کنید:
+              </p>
+              <div style={{
+                background: '#fff7e6',
+                border: '1px solid #ffd591',
+                borderRadius: '6px',
+                padding: '12px',
+                marginTop: '8px'
+              }}>
+                {warningMessage.boxes.map((boxName, idx) => (
+                  <div key={idx} style={{ marginBottom: '4px' }}>
+                    {idx + 1}. {boxName}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Header */}
       <Card
         style={{
@@ -1149,39 +1643,59 @@ const addNewBox = () => {
         <div
           style={{
             display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 12,
+            flexDirection: "column",
+            gap: 16,
           }}
+          className="order-creation-header"
         >
-          <Space wrap>
-            <Button
-              icon={<ArrowLeftOutlined />}
-              onClick={() => navigate("/orders")}
-              style={{ borderRadius: 8 }}
-            >
-              بازگشت
-            </Button>
-            <Title level={3} style={{ margin: 0, color: "#2c3e50" }}>
-              ایجاد سفارش دستی
-            </Title>
-            <Badge
-              count={`#${orderId}`}
-              style={{
-                backgroundColor: "#faad14",
-                color: "#fff",
-                fontSize: "12px",
-              }}
-            />
-          </Space>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 12,
+            }}
+          >
+            <Space wrap>
+              <Button
+                icon={<ArrowLeftOutlined />}
+                onClick={() => navigate("/orders")}
+                style={{ borderRadius: 8 }}
+                size="small"
+              >
+                بازگشت
+              </Button>
+              <Title level={3} style={{ margin: 0, color: "#2c3e50", fontSize: "18px" }}>
+                ایجاد سفارش دستی
+              </Title>
+              <Badge
+                count={`#${orderId}`}
+                style={{
+                  backgroundColor: "#faad14",
+                  color: "#fff",
+                  fontSize: "12px",
+                }}
+              />
+            </Space>
+          </div>
 
           {/* دکمه تکمیل سفارش + چاپ */}
-          <Space>
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 8,
+              width: "100%",
+            }}
+          >
             <Button
               type="primary"
               icon={<CheckCircleOutlined />}
               onClick={handleCompleteOrder}
-              style={{ borderRadius: 8, fontWeight: 600 }}
+              loading={completingOrder}
+              style={{ borderRadius: 8, fontWeight: 600, flex: 1, minWidth: 120 }}
+              block
             >
               تکمیل سفارش
             </Button>
@@ -1189,12 +1703,13 @@ const addNewBox = () => {
               <Button
                 icon={<PrinterOutlined />}
                 onClick={() => printInIframe(invoiceHTML)}
-                style={{ borderRadius: 8 }}
+                style={{ borderRadius: 8, flex: 1, minWidth: 120 }}
+                block
               >
                 پرینت فاکتورها
               </Button>
             )}
-          </Space>
+          </div>
         </div>
 
         {orderInfo && (
@@ -1207,22 +1722,26 @@ const addNewBox = () => {
               border: "1px solid #f0f0f0",
             }}
           >
-            <Row gutter={32}>
-              <Col span={12}>
-                <Text strong style={{ color: "#1f2937" }}>
-                  مشتری:{" "}
-                </Text>
-                <Text style={{ color: "#333", fontSize: "15px" }}>
-                  {orderInfo.customer?.first_name || "نامشخص"}
-                </Text>
+            <Row gutter={{ xs: 16, sm: 24, md: 32 }}>
+              <Col xs={24} sm={12}>
+                <div style={{ marginBottom: 8 }}>
+                  <Text strong style={{ color: "#1f2937", display: "block", marginBottom: 4 }}>
+                    مشتری:
+                  </Text>
+                  <Text style={{ color: "#333", fontSize: "15px" }}>
+                    {orderInfo.customer?.first_name} {orderInfo.customer?.last_name}
+                  </Text>
+                </div>
               </Col>
-              <Col span={12}>
-                <Text strong style={{ color: "#1f2937" }}>
-                  کنترل کننده کیفیت:{" "}
-                </Text>
-                <Text style={{ color: "#333", fontSize: "15px" }}>
-                  {orderInfo.qc_controller || "نامشخص"}
-                </Text>
+              <Col xs={24} sm={12}>
+                <div style={{ marginBottom: 8 }}>
+                  <Text strong style={{ color: "#1f2937", display: "block", marginBottom: 4 }}>
+                    کنترل کننده کیفیت:
+                  </Text>
+                  <Text style={{ color: "#333", fontSize: "15px" }}>
+                    {orderInfo.qc_controller || "نامشخص"}
+                  </Text>
+                </div>
               </Col>
             </Row>
           </div>
@@ -1273,17 +1792,6 @@ const addNewBox = () => {
           }
           extra={
             <Space wrap>
-              <Button
-                type="primary"
-                icon={<SendOutlined />}
-                onClick={() => submitBoxData(box.id)}
-                loading={loading[box.id]}
-                disabled={box.status === "submitted"}
-                style={{ borderRadius: 8, fontWeight: 500 }}
-              >
-                تکمیل جعبه
-              </Button>
-
               {/* دکمه پرینت برچسب ردیف (row_no) بعد از ارسال */}
               {box.status === "submitted" && (
                 <Button
@@ -1300,11 +1808,13 @@ const addNewBox = () => {
                 onConfirm={() => removeBox(box.id)}
                 okText="بله"
                 cancelText="خیر"
+                disabled={box.status === "submitted"}
               >
                 <Button
                   danger
                   icon={<DeleteOutlined />}
                   style={{ borderRadius: 8 }}
+                  disabled={box.status === "submitted"}
                 >
                   حذف جعبه
                 </Button>
@@ -1370,7 +1880,7 @@ const addNewBox = () => {
                       : "1px solid #91caff",
                 }}
               >
-                <Row gutter={16}>
+                <Row gutter={{ xs: 8, sm: 16 }}>
                   <Col span={24}>
                     <Text type="secondary" style={{ fontSize: "15px" }}>
                       تعداد{" "}
@@ -1397,8 +1907,8 @@ const addNewBox = () => {
                     const stats = calculateBoxStats(box);
                     return (
                       stats && (
-                        <Row gutter={16} style={{ marginTop: 12 }}>
-                          <Col span={12}>
+                        <Row gutter={{ xs: 8, sm: 16 }} style={{ marginTop: 12 }}>
+                          <Col xs={24} sm={12}>
                             <Text type="secondary" style={{ fontSize: "14px" }}>
                               مجموع شاخه‌ها:{" "}
                               <Text
@@ -1409,7 +1919,7 @@ const addNewBox = () => {
                               </Text>
                             </Text>
                           </Col>
-                          <Col span={12}>
+                          <Col xs={24} sm={12}>
                             <Text type="secondary" style={{ fontSize: "14px" }}>
                               مجموع گل‌ها:{" "}
                               <Text
@@ -1427,6 +1937,37 @@ const addNewBox = () => {
               </div>
             </>
           )}
+
+          {/* دکمه‌های تکمیل جعبه و کپی در پایین */}
+          <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid #f0f0f0" }}>
+            <Space wrap style={{ width: "100%" }}>
+              <Button
+                type="primary"
+                icon={<SendOutlined />}
+                onClick={() => submitBoxData(box.id)}
+                loading={loading[box.id]}
+                disabled={box.status === "submitted"}
+                style={{ borderRadius: 8, fontWeight: 500 }}
+              >
+                تکمیل جعبه
+              </Button>
+              <Button
+                icon={<CopyOutlined />}
+                onClick={() => duplicateBox(box.id)}
+                title="کپی جعبه"
+                style={{ borderRadius: 8 }}
+                disabled={
+                  box.pack_type === "CUT_FLOWER" 
+                    ? box.rows.some(
+                        (row) => !row.product_id || !row.product_variation_id
+                      )
+                    : false // برای گلدان همیشه فعال
+                }
+              >
+                کپی
+              </Button>
+            </Space>
+          </div>
         </Card>
       ))}
 
@@ -1493,7 +2034,7 @@ const addNewBox = () => {
 
       {/* Modal پیش‌نمایش فاکتورها */}
       <Modal
-        title="پیش‌نمایش فاکتورهای جعبه (A6)"
+        title="پیش‌نمایش لیبلهای جعبه (A6)"
         open={showInvoicePreview}
         onCancel={() => setShowInvoicePreview(false)}
         footer={[
@@ -1521,6 +2062,48 @@ const addNewBox = () => {
           }}
           srcDoc={invoiceHTML}
         />
+      </Modal>
+
+      {/* Modal تایید لوگو */}
+      <Modal
+        title="تنظیمات چاپ لیبل"
+        open={logoConfirmModalVisible}
+        onCancel={() => {
+          setLogoConfirmModalVisible(false);
+          setPendingPrintData(null);
+        }}
+        footer={[
+          <Button
+            key="without-logo"
+            onClick={() => {
+              setLogoConfirmModalVisible(false);
+              executePrintInvoices(false);
+            }}
+          >
+            بدون لوگو
+          </Button>,
+          <Button
+            key="with-logo"
+            type="primary"
+            onClick={() => {
+              setLogoConfirmModalVisible(false);
+              executePrintInvoices(true);
+            }}
+          >
+            با لوگو
+          </Button>,
+        ]}
+        width={400}
+        destroyOnClose
+      >
+        <div style={{ textAlign: "center", padding: "20px 0" }}>
+          <p style={{ fontSize: "15px", marginBottom: 16 }}>
+            آیا می‌خواهید لوگو شرکت در لیبل‌ها نمایش داده شود؟
+          </p>
+          <p style={{ color: "#666", fontSize: "13px" }}>
+            با انتخاب "با لوگو"، لوگو شرکت در بالای لیبل نمایش داده می‌شود.
+          </p>
+        </div>
       </Modal>
 
       <style jsx>{`

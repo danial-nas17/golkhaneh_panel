@@ -12,6 +12,7 @@ import {
   Space,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
+import BackButton from "../../components/BackButton";
 import { useNavigate } from "react-router-dom";
 import api from "../../api";
 import TinyEditor from "../../components/Editor";
@@ -106,7 +107,10 @@ const AddBrand = () => {
   return (
     <Card>
       <div>
-        <h2 className="mb-10 text-xl">افزودن برند</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl">افزودن برند</h2>
+          <BackButton to="/brands" />
+        </div>
         <Spin spinning={loading}>
           <Form
             form={form}

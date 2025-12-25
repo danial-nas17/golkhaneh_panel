@@ -16,9 +16,11 @@ import {
   Alert,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
+import BackButton from "../../../components/BackButton";
 import { useNavigate } from "react-router-dom";
 import api from "../../../api";
 import TinyEditor from "../../../components/Editor";
+import UnifiedErrorHandler from "../../../utils/unifiedErrorHandler";
 
 const { TextArea } = Input;
 
@@ -28,7 +30,6 @@ function AddProduct() {
   const [loading, setLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(true);
   const [categories, setCategories] = useState([]);
-  const [brands, setBrands] = useState([]);
   const [attributes, setAttributes] = useState([]);
   const [selectedAttributes, setSelectedAttributes] = useState([]);
   const [imageFiles, setImageFiles] = useState([]);
@@ -62,14 +63,12 @@ function AddProduct() {
   const fetchInitialData = async () => {
     setFetchingData(true);
     try {
-      const [categoriesRes, brandsRes, attributesRes] = await Promise.all([
+      const [categoriesRes, attributesRes] = await Promise.all([
         api.get(`/panel/category`),
-        api.get(`/panel/brand`),
         api.get(`/panel/attribute?includes[]=values&type=product`),
       ]);
 
       setCategories(categoriesRes.data.data || []);
-      setBrands(brandsRes.data.data || []);
       setAttributes(attributesRes.data.data || []);
     } catch (error) {
       message.error("دریافت اطلاعات اولیه با خطا مواجه شد");
@@ -158,7 +157,6 @@ function AddProduct() {
         "video_provider",
         "video_link",
         "catalog_link",
-        "brand",
         "description",
       ];
       basicFields.forEach((field) => {
@@ -201,10 +199,10 @@ function AddProduct() {
         formData.append("thumb", values.thumb.file);
       }
 
-      formData.append("size_guide", editorContent1);
-      formData.append("features", editorContent2);
-      formData.append("return_conditions", editorContent3);
-      formData.append("guarantee", editorContent4);
+      // formData.append("size_guide", editorContent1);
+      // formData.append("features", editorContent2);
+      // formData.append("return_conditions", editorContent3);
+      // formData.append("guarantee", editorContent4);
 
       appendIfExists("seo_title", values.seo_title);
       appendIfExists("seo_description", values.seo_description);
@@ -231,19 +229,21 @@ function AddProduct() {
       message.success("محصول با موفقیت اضافه شد");
       navigate("/products");
     } catch (error) {
-      if (error.response && error.response.status === 422) {
-        // Handle validation errors
-        const { errors } = error.response.data.data;
-        setValidationErrors(errors);
-        setFormFieldsError(errors);
-
+      // Use the unified error handler
+      const errorResult = UnifiedErrorHandler.handleApiError(error, form, {
+        showValidationMessages: false, // Don't show individual field messages
+        showGeneralMessages: true,     // Show general error message
+        defaultMessage: "افزودن محصول با خطا مواجه شد"
+      });
+      
+      // Set validation errors for display in Alert component
+      if (errorResult.type === 'validation') {
+        setValidationErrors(errorResult.validationErrors);
         // Scroll to top to show the error message
         window.scrollTo({ top: 0, behavior: "smooth" });
-        message.error("لطفاً خطاهای فرم را برطرف کنید");
-      } else {
-        message.error("افزودن محصول با خطا مواجه شد");
       }
-      console.error("خطا در افزودن محصول:", error);
+      
+      console.error("خطا در افزودن محصول:", errorResult);
     } finally {
       setLoading(false);
     }
@@ -294,7 +294,12 @@ function AddProduct() {
 
   return (
     <div>
-      <Card title="افزودن محصول جدید" className="mb-4">
+      <Card className="mb-4" title={
+        <div className="flex items-center justify-between">
+          <span>افزودن محصول جدید</span>
+          <BackButton to="/products" />
+        </div>
+      }>
         {validationErrors && (
           <Alert
             message="خطاهای اعتبارسنجی"
@@ -343,43 +348,7 @@ function AddProduct() {
               </Form.Item>
             </Col>
 
-            <Col xs={24} sm={24} md={12} lg={12}>
-              <Form.Item
-                name="brand"
-                label="برند"
-                rules={[
-                  { required: true, message: "لطفاً برند را انتخاب کنید" },
-                ]}
-              >
-                <Select allowClear>
-                  {brands?.map((brand) => (
-                    <Select.Option key={brand.id} value={brand.id}>
-                      {brand.title}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-
-            <Col xs={24} sm={24} md={12} lg={12}>
-              <Form.Item name="catalog_link" label="لینک کاتالوگ">
-                <Input />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={24}>
-            <Col span={12}>
-              <Form.Item name="video_provider" label="ویدیو">
-                <Input />
-              </Form.Item>
-            </Col>
-
-            <Col span={12}>
-              <Form.Item name="video_link" label="لینک ویدیو">
-                <Input />
-              </Form.Item>
-            </Col>
+            
           </Row>
 
           <Row gutter={24}>
@@ -445,7 +414,7 @@ function AddProduct() {
             </Upload>
           </Form.Item>
 
-          <Form.Item
+          {/* <Form.Item
             label="مشخصات محصول"
             validateTrigger={["onChange", "onBlur"]}
             rules={[
@@ -545,7 +514,7 @@ function AddProduct() {
                 <Switch />
               </Form.Item>
             </Col>
-          </Row>
+          </Row> */}
 
           <Form.Item
             label="تصاویر"
@@ -568,31 +537,6 @@ function AddProduct() {
             </Upload>
           </Form.Item>
 
-          <Divider>بخش سئو</Divider>
-          <Form.Item name="seo_title" label="عنوان سئو">
-            <Input />
-          </Form.Item>
-
-          <Form.Item name="seo_description" label="توضیحات سئو">
-            <TextArea rows={4} />
-          </Form.Item>
-
-          <Form.Item name="canonical" label="URL Canonical">
-            <Input />
-          </Form.Item>
-
-          <Row gutter={24}>
-            <Col span={12}>
-              <Form.Item name="follow" label="Follow" valuePropName="checked">
-                <Switch defaultChecked="true" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="index" label="Index" valuePropName="checked">
-                <Switch defaultChecked="true" />
-              </Form.Item>
-            </Col>
-          </Row>
 
           <Form.Item>
             <Button type="primary" htmlType="submit" loading={loading}>

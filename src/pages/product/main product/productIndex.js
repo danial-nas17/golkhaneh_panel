@@ -32,6 +32,7 @@ import {
   UserOutlined,
   CalendarOutlined,
   GlobalOutlined,
+  RollbackOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "../../../api";
@@ -61,12 +62,106 @@ function ProductIndex() {
   const [attributeValues, setAttributeValues] = useState({});
   const [filterDrawerVisible, setFilterDrawerVisible] = useState(false);
   const [filterForm] = Form.useForm();
+  const [showDeleted, setShowDeleted] = useState(false);
 
   // States for logs modal
   const [logsModalVisible, setLogsModalVisible] = useState(false);
   const [productLogs, setProductLogs] = useState([]);
   const [logsLoading, setLogsLoading] = useState(false);
   const [selectedProductTitle, setSelectedProductTitle] = useState("");
+  const [selectedProductId, setSelectedProductId] = useState(null);
+  const [revertLoading, setRevertLoading] = useState({});
+
+  // Function to get attribute value names from IDs
+  const getAttributeValueNames = async (attributeIds) => {
+    if (!attributeIds || attributeIds.length === 0) return [];
+
+    try {
+      // Parse the attribute_values if it's a string
+      const ids =
+        typeof attributeIds === "string"
+          ? JSON.parse(attributeIds)
+          : attributeIds;
+
+      // Fetch attribute values by IDs
+      const response = await api.get("/panel/attribute-value", {
+        params: {
+          ids: ids.join(","),
+          per_page: 100,
+        },
+      });
+
+      return response?.data?.data || [];
+    } catch (error) {
+      console.error("Error fetching attribute values:", error);
+      return [];
+    }
+  };
+
+  // Persian translation mapping for keys
+  const getKeyTranslation = (key) => {
+    const translations = {
+      // Product fields
+      creator_id: "شناسه سازنده",
+      title: "عنوان",
+      sub_title: "زیرعنوان",
+      description: "توضیحات",
+      size_guide: "راهنمای سایز",
+      features: "ویژگی‌ها",
+      return_conditions: "شرایط بازگشت",
+      guarantee: "گارانتی",
+      unit: "واحد",
+      unit_price: "قیمت واحد",
+      weight: "وزن",
+      video_provider: "ارائه‌دهنده ویدیو",
+      video_link: "لینک ویدیو",
+      catalog_link: "لینک کاتالوگ",
+      original: "اصل",
+      featured: "ویژه",
+      refundable: "قابل بازگشت",
+      published: "منتشر شده",
+      seo_title: "عنوان سئو",
+      seo_description: "توضیحات سئو",
+      follow: "دنبال کردن",
+      index: "نمایه",
+      canonical: "کانونیکال",
+      slug: "پیوند",
+      id: "شناسه",
+
+      // Relations
+      categories: "دسته‌بندی‌ها",
+      auditAttributes: "ویژگی‌ها",
+      attributes: "ویژگی‌ها",
+      variations: "تنوع‌ها",
+      variants: "تنوع‌ها",
+
+      // Variant fields
+      price: "قیمت",
+      off_price: "قیمت تخفیف‌دار",
+      buy_price: "قیمت خرید",
+      stock: "موجودی",
+      SKU: "کد کالا",
+      UPC: "کد UPC",
+      active: "فعال",
+      images: "تصاویر",
+
+      // Timestamps
+      created_at: "تاریخ ایجاد",
+      updated_at: "تاریخ به‌روزرسانی",
+      deleted_at: "تاریخ حذف",
+
+      // Other common fields
+      name: "نام",
+      key: "کلید",
+      value: "مقدار",
+      order: "ترتیب",
+      type: "نوع",
+      pivot: "جدول واسط",
+      attribute_values: "مقادیر ویژگی",
+    };
+
+    return translations[key] || key;
+  };
 
   const getColor = (index) => {
     const colors = ["gold", "cyan", "blue", "purple"];
@@ -80,18 +175,6 @@ function ProductIndex() {
   });
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-
-  // const fetchBrands = async () => {
-  //   try {
-  //     const response = await api.get("/panel/brand", {
-  //       params: { per_page: 100, page: 1 },
-  //     });
-  //     setBrands(response?.data?.data || []);
-  //   } catch (error) {
-  //     console.error("خطا در دریافت برندها:", error);
-  //     message.error("دریافت برندها با خطا مواجه شد");
-  //   }
-  // };
 
   const parsePriceString = (priceString) => {
     if (typeof priceString === "number") return priceString;
@@ -118,6 +201,11 @@ function ProductIndex() {
     }
   };
 
+  // Check if a product is deleted
+  const isProductDeleted = (product) => {
+    return product.deleted_at !== null && product.deleted_at !== undefined;
+  };
+
   const fetchProducts = async () => {
     setLoading(true);
     try {
@@ -141,6 +229,7 @@ function ProductIndex() {
         search: search.trim(),
         brand,
         includes: ["variants", "attributes"],
+        ...(showDeleted && { with_deleted: true }),
         ...attributeFilters,
       };
 
@@ -163,6 +252,7 @@ function ProductIndex() {
   const fetchProductLogs = async (productId, productTitle) => {
     setLogsLoading(true);
     setSelectedProductTitle(productTitle);
+    setSelectedProductId(productId);
     try {
       const response = await api.get(`/panel/product/${productId}`, {
         params: {
@@ -171,9 +261,10 @@ function ProductIndex() {
       });
 
       // Filter logs that have non-empty changes
-      const filteredLogs = response?.data?.data?.logs?.filter(
-        (log) => log.changes && Object.keys(log.changes).length > 0
-      ) || [];
+      const filteredLogs =
+        response?.data?.data?.logs?.filter(
+          (log) => log.changes && Object.keys(log.changes).length > 0
+        ) || [];
 
       setProductLogs(filteredLogs);
       setLogsModalVisible(true);
@@ -182,6 +273,35 @@ function ProductIndex() {
       message.error("دریافت لاگها با خطا مواجه شد");
     } finally {
       setLogsLoading(false);
+    }
+  };
+
+  // Revert to specific log state
+  const handleRevertToLog = async (logId) => {
+    if (!selectedProductId) {
+      message.error("شناسه محصول یافت نشد");
+      return;
+    }
+
+    setRevertLoading((prev) => ({ ...prev, [logId]: true }));
+
+    try {
+      await api.post(
+        `/panel/product/${selectedProductId}/transition-audit/${logId}`
+      );
+
+      message.success("محصول با موفقیت به حالت قبلی بازگردانده شد");
+
+      // Refresh both logs and products data
+      await Promise.all([
+        fetchProductLogs(selectedProductId, selectedProductTitle),
+        fetchProducts(),
+      ]);
+    } catch (error) {
+      console.error("خطا در بازگردانی لاگ:", error);
+      message.error("خطا در بازگردانی لاگ");
+    } finally {
+      setRevertLoading((prev) => ({ ...prev, [logId]: false }));
     }
   };
 
@@ -214,90 +334,195 @@ function ProductIndex() {
   };
 
   // Format change value for display
-  const formatChangeValue = (key, value) => {
+  // Enhanced function to format change value for display
+  const formatChangeValue = async (key, value, isAttributeChange = false) => {
     if (value === null) return "خالی";
     if (typeof value === "boolean") return value ? "فعال" : "غیرفعال";
+
+    // Special handling for attribute values
+    if (
+      isAttributeChange &&
+      key === "attribute_values" &&
+      typeof value === "string"
+    ) {
+      try {
+        const attributeIds = JSON.parse(value);
+        const attributeValues = await getAttributeValueNames(attributeIds);
+        return attributeValues.map((av) => av.name || av.value).join(", ");
+      } catch (error) {
+        console.error("Error parsing attribute values:", error);
+        return value;
+      }
+    }
+
     if (typeof value === "object") {
       return JSON.stringify(value, null, 2);
     }
+
     return String(value);
   };
 
-  // Render changes in a readable format
-  const renderChanges = (changes, eventType) => {
-    if (!changes || Object.keys(changes).length === 0) return null;
-
-    return (
-      <div className="mt-3">
-        {Object.entries(changes).map(([key, change]) => (
-          <div key={key} className="mb-2 p-2 bg-gray-50 rounded">
-            <Text strong className="text-blue-600">{key}:</Text>
-            
-            {eventType === 'attach' || eventType === 'detach' || eventType === 'sync' ? (
-              // For attach/detach/sync events, show the items that were attached/detached
-              <div className="mt-1">
-                {change.old && change.old.length > 0 && (
-                  <div className="mb-1">
-                    <Text type="danger">حذف شده:</Text>
-                    <div className="ml-2">
-                      {Array.isArray(change.old) ? (
-                        change.old.map((item, idx) => (
-                          <Tag key={idx} color="red" className="mb-1">
-                            {item.title || item.name || item.key || `آیتم ${idx + 1}`}
-                          </Tag>
-                        ))
-                      ) : (
-                        <Text code>{formatChangeValue(key, change.old)}</Text>
-                      )}
-                    </div>
-                  </div>
-                )}
-                
-                {change.new && change.new.length > 0 && (
-                  <div>
-                    <Text type="success">اضافه شده:</Text>
-                    <div className="ml-2">
-                      {Array.isArray(change.new) ? (
-                        change.new.map((item, idx) => (
-                          <Tag key={idx} color="green" className="mb-1">
-                            {item.title || item.name || item.key || `آیتم ${idx + 1}`}
-                          </Tag>
-                        ))
-                      ) : (
-                        <Text code>{formatChangeValue(key, change.new)}</Text>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              // For other events, show old -> new format
-              <div className="mt-1">
-                {change.old !== undefined && (
-                  <div>
-                    <Text type="secondary">قبل:</Text>
-                    <Text code className="ml-2">
-                      {formatChangeValue(key, change.old)}
-                    </Text>
-                  </div>
-                )}
-                
-                {change.new !== undefined && (
-                  <div>
-                    <Text type="success">بعد:</Text>
-                    <Text code className="ml-2">
-                      {formatChangeValue(key, change.new)}
-                    </Text>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    );
+  // Check if log can be reverted (exclude 'created' event type)
+  const canRevertLog = (eventType) => {
+    return eventType !== "created";
   };
 
+  // Render changes in a readable format
+  // Enhanced render changes component
+  const RenderChanges = ({ changes, eventType }) => {
+    const [renderedContent, setRenderedContent] = React.useState(null);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+      const processChanges = async () => {
+        if (!changes || Object.keys(changes).length === 0) {
+          setRenderedContent(null);
+          setLoading(false);
+          return;
+        }
+
+        const renderedChanges = [];
+
+        for (const [key, change] of Object.entries(changes)) {
+          const translatedKey = getKeyTranslation(key);
+          const isAttributeChange = key === "auditAttributes";
+
+          if (
+            eventType === "attach" ||
+            eventType === "detach" ||
+            eventType === "sync"
+          ) {
+            // For attach/detach/sync events, show the items that were attached/detached
+            const oldItems = [];
+            const newItems = [];
+
+            if (change.old && change.old.length > 0) {
+              for (const item of change.old) {
+                if (
+                  isAttributeChange &&
+                  item.pivot &&
+                  item.pivot.attribute_values
+                ) {
+                  const attributeValueNames = await formatChangeValue(
+                    "attribute_values",
+                    item.pivot.attribute_values,
+                    true
+                  );
+                  oldItems.push(
+                    <Tag key={`old-${item.id}`} color="red" className="mb-1">
+                      {`${item.key}: ${attributeValueNames}`}
+                    </Tag>
+                  );
+                } else {
+                  oldItems.push(
+                    <Tag key={`old-${item.id}`} color="red" className="mb-1">
+                      {item.title || item.name || item.key || `آیتم ${item.id}`}
+                    </Tag>
+                  );
+                }
+              }
+            }
+
+            if (change.new && change.new.length > 0) {
+              for (const item of change.new) {
+                if (
+                  isAttributeChange &&
+                  item.pivot &&
+                  item.pivot.attribute_values
+                ) {
+                  const attributeValueNames = await formatChangeValue(
+                    "attribute_values",
+                    item.pivot.attribute_values,
+                    true
+                  );
+                  newItems.push(
+                    <Tag key={`new-${item.id}`} color="green" className="mb-1">
+                      {`${item.key}: ${attributeValueNames}`}
+                    </Tag>
+                  );
+                } else {
+                  newItems.push(
+                    <Tag key={`new-${item.id}`} color="green" className="mb-1">
+                      {item.title || item.name || item.key || `آیتم ${item.id}`}
+                    </Tag>
+                  );
+                }
+              }
+            }
+
+            renderedChanges.push(
+              <div key={key} className="mb-2 p-2 bg-gray-50 rounded">
+                <Text strong className="text-blue-600">
+                  {translatedKey}:
+                </Text>
+                <div className="mt-1">
+                  {oldItems.length > 0 && (
+                    <div className="mb-1">
+                      <Text type="danger">حذف شده:</Text>
+                      <div className="ml-2">{oldItems}</div>
+                    </div>
+                  )}
+                  {newItems.length > 0 && (
+                    <div>
+                      <Text type="success">اضافه شده:</Text>
+                      <div className="ml-2">{newItems}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          } else {
+            // For other events, show old -> new format
+            const oldValue =
+              change.old !== undefined
+                ? await formatChangeValue(key, change.old, isAttributeChange)
+                : undefined;
+            const newValue =
+              change.new !== undefined
+                ? await formatChangeValue(key, change.new, isAttributeChange)
+                : undefined;
+
+            renderedChanges.push(
+              <div key={key} className="mb-2 p-2 bg-gray-50 rounded">
+                <Text strong className="text-blue-600">
+                  {translatedKey}:
+                </Text>
+                <div className="mt-1">
+                  {oldValue !== undefined && (
+                    <div>
+                      <Text type="secondary">قبل:</Text>
+                      <Text code className="ml-2">
+                        {oldValue}
+                      </Text>
+                    </div>
+                  )}
+                  {newValue !== undefined && (
+                    <div>
+                      <Text type="success">بعد:</Text>
+                      <Text code className="ml-2">
+                        {newValue}
+                      </Text>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          }
+        }
+
+        setRenderedContent(<div className="mt-3">{renderedChanges}</div>);
+        setLoading(false);
+      };
+
+      processChanges();
+    }, [changes, eventType]);
+
+    if (loading) {
+      return <div className="text-center py-2">در حال بارگیری...</div>;
+    }
+
+    return renderedContent;
+  };
   // Handle inline editing for variants
   const handleEditVariant = (record) => {
     setEditingVariant(record.product_variant_id);
@@ -426,7 +651,6 @@ function ProductIndex() {
   };
 
   useEffect(() => {
-    // fetchBrands();
     fetchAttributes();
     fetchProducts();
 
@@ -446,7 +670,7 @@ function ProductIndex() {
       }
     });
     setAttributeValues(initialAttributeValues);
-  }, [searchParams]);
+  }, [searchParams, showDeleted]);
 
   const handleDelete = async (id) => {
     try {
@@ -486,9 +710,6 @@ function ProductIndex() {
         </span>
       ),
     },
-   
-   
-   
     {
       title: "ترکیب ویژگی‌ها",
       dataIndex: "attribute_varitation",
@@ -540,46 +761,42 @@ function ProductIndex() {
       key: "actions",
       render: (_, record) => (
         <Space>
-         
-             
-              <Button
-                type="primary"
-                icon={<EditOutlined />}
-                size="small"
-                onClick={() =>
-                  navigate(
-                    `/productsVariation/edit/${record.product_variant_id}`
-                  )
-                }
-                title="ویرایش کامل"
-              />
-              <Button
-                type="primary"
-                icon={<CopyOutlined />}
-                size="small"
-                onClick={() =>
-                  navigate(`/productsVariation/add/${record.id}`, {
-                    state: {
-                      variantData: { ...record, product_id: record.id },
-                    },
-                  })
-                }
-              >
-                کپی
-              </Button>
-              <Popconfirm
-                title="آیا از حذف این واریانت اطمینان دارید؟"
-                onConfirm={() => handleDeleteVariant(record.product_variant_id)}
-                okText="بله"
-                cancelText="خیر"
-              >
-                <Button
-                  type="primary"
-                  danger
-                  icon={<DeleteOutlined />}
-                  size="small"
-                />
-              </Popconfirm>
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            size="small"
+            onClick={() =>
+              navigate(`/productsVariation/edit/${record.product_variant_id}`)
+            }
+            title="ویرایش کامل"
+          />
+          <Button
+            type="primary"
+            icon={<CopyOutlined />}
+            size="small"
+            onClick={() =>
+              navigate(`/productsVariation/add/${record.id}`, {
+                state: {
+                  variantData: { ...record, product_id: record.id },
+                },
+              })
+            }
+          >
+            کپی
+          </Button>
+          <Popconfirm
+            title="آیا از حذف این واریانت اطمینان دارید؟"
+            onConfirm={() => handleDeleteVariant(record.product_variant_id)}
+            okText="بله"
+            cancelText="خیر"
+          >
+            <Button
+              type="primary"
+              danger
+              icon={<DeleteOutlined />}
+              size="small"
+            />
+          </Popconfirm>
         </Space>
       ),
     },
@@ -595,8 +812,17 @@ function ProductIndex() {
       title: "عنوان",
       dataIndex: "title",
       key: "title",
+      render: (title, record) => (
+        <div>
+          {title}
+          {isProductDeleted(record) && (
+            <Tag color="red" className="ml-2">
+              حذف شده
+            </Tag>
+          )}
+        </div>
+      ),
     },
-   
     {
       title: "دسته‌بندی‌ها",
       dataIndex: "categories",
@@ -649,6 +875,12 @@ function ProductIndex() {
             type="primary"
             icon={<PlusOutlined />}
             onClick={() => navigate(`/productsVariation/add/${record.id}`)}
+            disabled={isProductDeleted(record)}
+            title={
+              isProductDeleted(record)
+                ? "محصول حذف شده قابل ویرایش نیست"
+                : "افزودن تنوع"
+            }
           >
             افزودن تنوع
           </Button>
@@ -656,6 +888,12 @@ function ProductIndex() {
             type="primary"
             icon={<EditOutlined />}
             onClick={() => navigate(`/products/edit/${record.id}`)}
+            disabled={isProductDeleted(record)}
+            title={
+              isProductDeleted(record)
+                ? "محصول حذف شده قابل ویرایش نیست"
+                : "ویرایش"
+            }
           />
           <Button
             type="default"
@@ -665,14 +903,16 @@ function ProductIndex() {
           >
             لاگها
           </Button>
-          <Popconfirm
-            title="آیا از حذف این محصول اطمینان دارید؟"
-            onConfirm={() => handleDelete(record.id)}
-            okText="بله"
-            cancelText="خیر"
-          >
-            <Button type="primary" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          {!isProductDeleted(record) && (
+            <Popconfirm
+              title="آیا از حذف این محصول اطمینان دارید؟"
+              onConfirm={() => handleDelete(record.id)}
+              okText="بله"
+              cancelText="خیر"
+            >
+              <Button type="primary" danger icon={<DeleteOutlined />} />
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -701,18 +941,20 @@ function ProductIndex() {
             className="max-w-md"
             allowClear
           />
-          
-          {/* <Button
-            icon={<FilterOutlined />}
-            onClick={() => setFilterDrawerVisible(true)}
-            type={
-              Object.keys(attributeValues).length > 0 ? "primary" : "default"
-            }
+
+          <Button
+            type={showDeleted ? "primary" : "default"}
+            onClick={() => {
+              setShowDeleted(!showDeleted);
+              // Reset to first page when toggling filter
+              setSearchParams({
+                ...Object.fromEntries(searchParams.entries()),
+                page: 1,
+              });
+            }}
           >
-            فیلتر بر اساس ویژگی‌ها
-            {Object.keys(attributeValues).length > 0 &&
-              ` (${Object.keys(attributeValues).length})`}
-          </Button> */}
+            {showDeleted ? "مخفی کردن حذف شده‌ها" : "نمایش حذف شده‌ها"}
+          </Button>
         </div>
 
         <Table
@@ -753,68 +995,6 @@ function ProductIndex() {
         />
       </div>
 
-      {/* Drawer for attribute filtering */}
-      {/* <Drawer
-        title="فیلتر بر اساس ویژگی‌ها"
-        placement="right"
-        onClose={() => setFilterDrawerVisible(false)}
-        open={filterDrawerVisible}
-        width={400}
-        footer={
-          <div style={{ textAlign: "right" }}>
-            <Button onClick={handleResetFilters} style={{ marginRight: 8 }}>
-              پاک کردن
-            </Button>
-            <Button onClick={handleApplyFilters} type="primary">
-              اعمال فیلتر
-            </Button>
-          </div>
-        }
-      >
-        <Form form={filterForm} layout="vertical">
-          <Form.Item name="selectedAttributes" label="انتخاب ویژگی‌ها">
-            <Select
-              mode="multiple"
-              placeholder="ویژگی‌های مورد نظر را انتخاب کنید"
-              onChange={handleAttributeSelect}
-              optionFilterProp="label"
-              style={{ width: "100%" }}
-              value={selectedAttributes.map((attr) => attr.id)}
-              options={attributes.map((attr) => ({
-                label: attr.name,
-                value: attr.id,
-                key: attr.id,
-              }))}
-            />
-          </Form.Item>
-
-          <Divider />
-
-          {selectedAttributes.map((attribute) => (
-            <Form.Item
-              key={attribute.id}
-              name={`attr_${attribute.key}`}
-              label={attribute.name}
-            >
-              <Select
-                mode="multiple"
-                placeholder={`انتخاب ${attribute.name}`}
-                onChange={(values) =>
-                  handleAttributeValueChange(attribute.key, values)
-                }
-                value={attributeValues[attribute.key] || []}
-                style={{ width: "100%" }}
-                options={attribute.values.map((val) => ({
-                  label: val.name,
-                  value: val.id,
-                  key: val.id,
-                }))}
-              />
-            </Form.Item>
-          ))}
-        </Form>
-      </Drawer> */}
-
       {/* Modal for displaying logs */}
       <Modal
         title={
@@ -829,10 +1009,10 @@ function ProductIndex() {
         footer={[
           <Button key="close" onClick={() => setLogsModalVisible(false)}>
             بستن
-          </Button>
+          </Button>,
         ]}
         style={{ top: 20 }}
-        bodyStyle={{ maxHeight: '70vh', overflow: 'auto' }}
+        bodyStyle={{ maxHeight: "70vh", overflow: "auto" }}
       >
         {logsLoading ? (
           <div className="flex justify-center items-center py-8">
@@ -845,9 +1025,14 @@ function ProductIndex() {
                 key={log.audit_id}
                 color={getEventColor(log.audit_event)}
                 dot={
-                  <div 
+                  <div
                     className={`w-3 h-3 rounded-full`}
-                    style={{ backgroundColor: getEventColor(log.audit_event) === 'default' ? '#d9d9d9' : undefined }}
+                    style={{
+                      backgroundColor:
+                        getEventColor(log.audit_event) === "default"
+                          ? "#d9d9d9"
+                          : undefined,
+                    }}
                   />
                 }
                 label={
@@ -863,14 +1048,40 @@ function ProductIndex() {
                   </div>
                 }
               >
-                <Card 
-                  size="small" 
+                <Card
+                  size="small"
                   className="mb-2"
                   title={
                     <div className="flex items-center justify-between">
-                      <Tag color={getEventColor(log.audit_event)} className="text-sm">
-                        {getEventTypePersian(log.audit_event)}
-                      </Tag>
+                      <div className="flex items-center gap-2">
+                        <Tag
+                          color={getEventColor(log.audit_event)}
+                          className="text-sm"
+                        >
+                          {getEventTypePersian(log.audit_event)}
+                        </Tag>
+                        {canRevertLog(log.audit_event) && (
+                          <Popconfirm
+                            title="آیا از بازگردانی محصول به این حالت اطمینان دارید؟"
+                            description="این عملیات باعث تغییر وضعیت کنونی محصول خواهد شد."
+                            onConfirm={() => handleRevertToLog(log.audit_id)}
+                            okText="بله"
+                            cancelText="خیر"
+                            placement="topLeft"
+                          >
+                            <Button
+                              size="small"
+                              type="link"
+                              icon={<RollbackOutlined />}
+                              loading={revertLoading[log.audit_id]}
+                              className="text-orange-500 hover:text-orange-600"
+                              title="بازگردانی به این حالت"
+                            >
+                              بازگردانی
+                            </Button>
+                          </Popconfirm>
+                        )}
+                      </div>
                       <Text type="secondary" className="text-xs">
                         #{log.audit_id}
                       </Text>
@@ -886,24 +1097,28 @@ function ProductIndex() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Text type="secondary" className="text-xs">
-                        IP: {log.audit_ip_address}
+                        آی پی کاربر: {log.audit_ip_address}
                       </Text>
                       <Text type="secondary" className="text-xs">
-                        User Agent: {log.audit_user_agent}
+                        مرورگر کاربر: {log.audit_user_agent}
                       </Text>
                     </div>
                   </div>
 
                   <Collapse size="small" ghost>
-                    <Panel 
+                    <Panel
                       header={
                         <Text strong className="text-blue-600">
-                          جزئیات تغییرات ({Object.keys(log.changes || {}).length} مورد)
+                          جزئیات تغییرات (
+                          {Object.keys(log.changes || {}).length} مورد)
                         </Text>
-                      } 
+                      }
                       key="1"
                     >
-                      {renderChanges(log.changes, log.audit_event)}
+                      <RenderChanges
+                        changes={log.changes}
+                        eventType={log.audit_event}
+                      />
                     </Panel>
                   </Collapse>
                 </Card>
