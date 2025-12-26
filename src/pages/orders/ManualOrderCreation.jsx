@@ -515,7 +515,10 @@ const duplicateBox = (boxId) => {
   };
 
   // --- چاپ داخل iframe (حل مشکل popup) ---
-  const printInIframe = (html) => {
+  const printInIframe = (html, loadingKey = "print-iframe") => {
+    // نمایش loading
+    message.loading({ content: "در حال آماده‌سازی لیبل...", key: loadingKey });
+    
     const iframe = document.createElement("iframe");
     Object.assign(iframe.style, {
       position: "fixed",
@@ -547,13 +550,21 @@ const duplicateBox = (boxId) => {
 
     const onLoad = () => {
       const w = iframe.contentWindow;
-      if (!w) return cleanup();
+      if (!w) {
+        cleanup();
+        message.error({ content: "خطا در بارگذاری لیبل", key: loadingKey });
+        return;
+      }
       // یک ذره صبر تا محتوا کامل رندر شود
       setTimeout(() => {
         try {
+          message.success({ content: "لیبل آماده است", key: loadingKey });
           w.focus();
           w.print();
-        } catch {}
+        } catch (e) {
+          message.error({ content: "خطا در چاپ لیبل", key: loadingKey });
+          cleanup();
+        }
       }, 100);
       // بعد از چاپ تمیزکاری کن
       w.addEventListener("afterprint", cleanup, { once: true });
@@ -1359,7 +1370,7 @@ const submitBoxData = async (boxId) => {
       message.warning("row_no برای این جعبه موجود نیست");
       return;
     }
-    printInIframe(buildRowNoStickersHTML(rowNo));
+    printInIframe(buildRowNoStickersHTML(rowNo), "print-rowno");
   };
 
   const renderBoxContent = (box, boxIndex) => {
@@ -1702,7 +1713,7 @@ const submitBoxData = async (boxId) => {
             {completePrintData?.length > 0 && (
               <Button
                 icon={<PrinterOutlined />}
-                onClick={() => printInIframe(invoiceHTML)}
+                onClick={() => printInIframe(invoiceHTML, "print-complete")}
                 style={{ borderRadius: 8, flex: 1, minWidth: 120 }}
                 block
               >

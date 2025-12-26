@@ -26,6 +26,7 @@ import {
   CustomerServiceOutlined,
   TeamOutlined,
   UsergroupAddOutlined,
+  PlusOutlined,
 } from "@ant-design/icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -44,7 +45,7 @@ const Sidebar = ({ showModal, isMobile, onCloseMobile }) => {
   const user = ctxUser || getCurrentUser();
   const normalizedUser = user && user.data ? user.data : user;
   const navigate = useNavigate();
-  const { hasPermission } = usePermissions();
+  const { hasPermission, userRole } = usePermissions();
 
   const handleMenuClick = (path) => {
     if (isMobile) {
@@ -333,6 +334,27 @@ const Sidebar = ({ showModal, isMobile, onCloseMobile }) => {
               }}
             >
               فاکتورهای فروش
+            </Menu.Item>
+          )}
+
+          {/* تب "ایجاد فاکتور" برای customer */}
+          {userRole && (
+            userRole.toLowerCase().includes('customer') || 
+            userRole === 'customer' || 
+            userRole === 'customer_staff' ||
+            userRole === 'Customer' ||
+            userRole === 'Customer_Staff'
+          ) && (
+            <Menu.Item
+              key="/invoices/create"
+              icon={<PlusOutlined />}
+              style={{ margin: "2px 4px", borderRadius: "6px" }}
+              onClick={() => {
+                handleMenuClick("/invoices?create=true");
+                if (isMobile) onCloseMobile();
+              }}
+            >
+              ایجاد فاکتور
             </Menu.Item>
           )}
 

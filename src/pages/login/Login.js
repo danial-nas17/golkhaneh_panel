@@ -102,15 +102,29 @@ const Login = () => {
         window.location.replace("/dashboard");
       }, 500);
     } catch (error) {
-      // Use the unified error handler
-      const errorResult = UnifiedErrorHandler.handleApiError(error, form, {
-        showValidationMessages: false,
-        showGeneralMessages: true,
-        defaultMessage: "خطا در ورود. لطفا دوباره تلاش کنید"
-      });
+      // For login errors, show a simple message instead of backend message
+      if (error.response) {
+        const { status } = error.response;
+        // For 401 (Unauthorized) or 422 (Validation) errors, show simple login error message
+        if (status === 401 || status === 422) {
+          message.error("رمز عبور یا نام کاربری اشتباه است");
+          setError("رمز عبور یا نام کاربری اشتباه است");
+        } else {
+          // For other errors, use unified error handler
+          const errorResult = UnifiedErrorHandler.handleApiError(error, form, {
+            showValidationMessages: false,
+            showGeneralMessages: true,
+            defaultMessage: "خطا در ورود. لطفا دوباره تلاش کنید"
+          });
+          setError(errorResult.message);
+        }
+      } else {
+        // Network or other errors
+        message.error("خطا در اتصال به سرور. لطفا دوباره تلاش کنید");
+        setError("خطا در اتصال به سرور. لطفا دوباره تلاش کنید");
+      }
       
-      setError(errorResult.message);
-      console.error("خطا در ورود:", errorResult);
+      console.error("خطا در ورود:", error);
       setLoading(false);
     }
   };

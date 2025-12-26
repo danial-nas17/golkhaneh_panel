@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Card, Descriptions, Spin, Button, Alert, Typography, Space } from "antd";
+import { Card, Descriptions, Spin, Button, Alert, Typography, Space, message } from "antd";
 import { ArrowLeftOutlined, FileTextOutlined, PrinterOutlined } from "@ant-design/icons";
 import api from "../../api";
 import UnifiedErrorHandler from "../../utils/unifiedErrorHandler";
@@ -46,9 +46,16 @@ const BoxViewPage = () => {
 
   const handlePrint = () => {
     // Reuse the single-invoice print already implemented on PackagingOrderDetails via labelData
+    const loadingKey = "print-box";
     try {
+      message.loading({ content: "در حال آماده‌سازی لیبل...", key: loadingKey });
+      
       const win = window.open("", "_blank");
-      if (!win) return;
+      if (!win) {
+        message.error({ content: "پنجره پرینت باز نشد. لطفا popup blocker را غیرفعال کنید.", key: loadingKey });
+        return;
+      }
+      
       const customerName =
         order?.customer?.first_name && order?.customer?.last_name
           ? `${order.customer.first_name} ${order.customer.last_name}`
@@ -67,10 +74,18 @@ const BoxViewPage = () => {
         </div>
       </body></html>`);
       win.document.close();
-      win.focus();
-      win.print();
-      setTimeout(() => win.close(), 400);
-    } catch {}
+      
+      // کمی تاخیر برای نمایش loading
+      setTimeout(() => {
+        message.success({ content: "لیبل آماده است", key: loadingKey });
+        win.focus();
+        win.print();
+        setTimeout(() => win.close(), 400);
+      }, 300);
+    } catch (error) {
+      message.error({ content: "خطا در چاپ لیبل", key: loadingKey });
+      console.error("Error printing label:", error);
+    }
   };
 
   return (

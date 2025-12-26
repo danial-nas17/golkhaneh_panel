@@ -335,7 +335,10 @@ const PackagingOrderDetails = () => {
     item?.product?.title || item?.product || item?.product_title || "محصول";
 
   const handlePrintLabel = async (record) => {
+    const loadingKey = "print-label";
     try {
+      message.loading({ content: "در حال آماده‌سازی لیبل...", key: loadingKey });
+      
       const n = String(record.row_no ?? "");
       const printContent = `
         <!doctype html>
@@ -356,23 +359,34 @@ const PackagingOrderDetails = () => {
         </html>
       `;
 
+      // کمی تاخیر برای نمایش loading
+      await new Promise(resolve => setTimeout(resolve, 300));
+
       const printWindow = window.open("", "_blank");
       if (printWindow) {
         printWindow.document.write(printContent);
         printWindow.document.close();
         printWindow.focus();
+        
+        message.success({ content: "لیبل آماده است", key: loadingKey });
+        
         printWindow.print();
 
         setTimeout(() => {
           printWindow.close();
         }, 1000);
       } else {
-        message.error(
-          "پنجره پرینت باز نشد. لطفا popup blocker را غیرفعال کنید."
-        );
+        message.error({
+          content: "پنجره پرینت باز نشد. لطفا popup blocker را غیرفعال کنید.",
+          key: loadingKey
+        });
       }
     } catch (error) {
       console.error("Error printing label:", error);
+      message.error({
+        content: "خطا در پرینت لیبل",
+        key: loadingKey
+      });
       UnifiedErrorHandler.handleApiError(error, null, {
         showGeneralMessages: true,
         defaultMessage: "خطا در پرینت لیبل",

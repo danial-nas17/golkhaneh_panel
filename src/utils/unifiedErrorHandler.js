@@ -25,6 +25,9 @@ export class UnifiedErrorHandler {
 
     if (!error.response) {
       // Network or other errors
+      // Check if browser reports offline status
+      const isOffline = !navigator.onLine;
+      
       if (showGeneralMessages) {
         Modal.error({
           title: (
@@ -34,7 +37,7 @@ export class UnifiedErrorHandler {
               color: '#f5222d',
               fontFamily: 'MyCustomFont, sans-serif'
             }}>
-              🌐 خطای شبکه
+              🌐 {isOffline ? 'اتصال اینترنت قطع شده است' : 'خطای شبکه'}
             </div>
           ),
           content: (
@@ -48,7 +51,10 @@ export class UnifiedErrorHandler {
               borderRight: '3px solid #ff4d4f',
               borderRadius: '4px'
             }}>
-              لطفاً اتصال اینترنت خود را بررسی کنید و دوباره تلاش کنید.
+              {isOffline 
+                ? 'اتصال اینترنت شما قطع شده است. لطفاً اتصال اینترنت خود را بررسی کنید و دوباره تلاش کنید.'
+                : 'لطفاً اتصال اینترنت خود را بررسی کنید و دوباره تلاش کنید.'
+              }
             </div>
           ),
           okText: 'متوجه شدم',
@@ -71,7 +77,7 @@ export class UnifiedErrorHandler {
       return {
         hasError: true,
         type: 'network',
-        message: "خطای شبکه",
+        message: isOffline ? "اتصال اینترنت قطع شده است" : "خطای شبکه",
         validationErrors: {},
         status: null
       };

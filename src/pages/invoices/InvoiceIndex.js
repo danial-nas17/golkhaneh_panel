@@ -9,7 +9,7 @@ import {
   ExclamationCircleOutlined,
   FileTextOutlined,
 } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "../../api";
 import dayjs from "dayjs";
 import InvoiceCreationModal from "../../components/invoices/InvoiceCreationModal";
@@ -48,6 +48,17 @@ const InvoiceIndex = () => {
   const [editForm] = Form.useForm();
 
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // بررسی query parameter برای باز کردن مودال ایجاد فاکتور
+  useEffect(() => {
+    const createParam = searchParams.get('create');
+    if (createParam === 'true') {
+      setModalVisible(true);
+      // حذف query parameter از URL
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleUpdated = () => {
     fetchInvoices(pagination.current, pagination.pageSize, searchText, statusFilter);
@@ -236,38 +247,28 @@ const InvoiceIndex = () => {
       dataIndex: "id",
       key: "id",
       render: (id) => <span className="text-gray-500">#{id}</span>,
-      width: 100,
-      responsive: ["xs", "sm", "md", "lg"],
-      fixed: "right",
-    },
-    {
-      title: "شماره فاکتور",
-      dataIndex: "invoice_number",
-      key: "invoice_number",
-      render: (invoice_number) => <span className="font-semibold">{invoice_number}</span>,
-      width: 180,
-      responsive: ["md", "lg"],
+      width: 80,
     },
     {
       title: "وضعیت",
       dataIndex: "status",
       key: "status",
       render: (status) => <Tag color={statusColors[status]}>{statusTranslations[status]}</Tag>,
-      width: 120,
+      width: 100,
     },
     {
       title: "نوع پرداخت",
       dataIndex: "payment_type",
       key: "payment_type",
       render: (payment_type) => <span>{paymentTypeTranslations[payment_type] || payment_type}</span>,
-      width: 140,
+      width: 110,
     },
     {
       title: "مجموع مبلغ",
       dataIndex: "total_amount",
       key: "total_amount",
       render: (amount) => <span className="font-medium">{amount ? `${amount.toLocaleString()} تومان` : "—"}</span>,
-      width: 150,
+      width: 130,
     },
     {
       title: "مشتری",
@@ -280,7 +281,7 @@ const InvoiceIndex = () => {
           <div className="text-gray-500 text-xs hidden md:block">{customer?.email}</div>
         </div>
       ),
-      width: 240,
+      width: 200,
     },
     // نمایش shop_manager فقط برای نقش‌هایی که مجاز هستند
     ...(userRole && !(
@@ -299,39 +300,24 @@ const InvoiceIndex = () => {
           <div className="text-gray-500 text-sm">{shop_manager?.mobile}</div>
         </div>
       ),
-      width: 220,
-      responsive: ["md", "lg"],
+      width: 180,
     }] : []),
-    {
-      title: "تاریخ ایجاد",
-      dataIndex: "created_at",
-      key: "created_at",
-      width: 160,
-    },
+    // {
+    //   title: "تاریخ ایجاد",
+    //   dataIndex: "created_at",
+    //   key: "created_at",
+    //   width: 140,
+    // },
     {
       title: "تاریخ تکمیل",
       dataIndex: "completed_at",
       key: "completed_at",
-      width: 160,
-      
-    },
-    {
-      title: "یادداشت",
-      dataIndex: "notes",
-      key: "notes",
-      render: (notes) => (
-        <div className="max-w-xs truncate" title={notes}>
-          {notes || "یادداشتی وجود ندارد"}
-        </div>
-      ),
-      width: 260,
-      responsive: ["lg"],
+      width: 140,
     },
     {
       title: "عملیات",
       key: "actions",
-      fixed: "left",
-      width: 280,
+      width: 180,
       render: (_, record) => (
         <Space size="small" wrap>
           <Button type="primary" icon={<EyeOutlined />} onClick={() => navigate(`/invoices/${record.id}`)}>
@@ -416,7 +402,7 @@ const InvoiceIndex = () => {
           }}
           onChange={handleTableChange}
           className="shadow-sm"
-          scroll={{ x: 1400, y: 600 }}
+          scroll={{ y: 600 }}
           sticky
         />
       </Card>

@@ -23,6 +23,7 @@ import {
   Alert,
   Spin,
 } from "antd";
+import { Form as AntForm } from "antd";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeftOutlined,
@@ -51,10 +52,25 @@ const formatNumber = (value) => {
   return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 
+// تابع کمکی برای فرمت کردن قیمت در input ها (با جداکننده و واحد تومان)
+const formatPriceInput = (value) => {
+  if (!value && value !== 0) return '';
+  const formatted = value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return formatted ? `${formatted} تومان` : '';
+};
+
 // تابع کمکی برای حذف جداکننده‌ها و تبدیل به عدد
 const parseNumber = (value) => {
   if (!value && value !== 0) return 0;
   return Number(value.toString().replace(/,/g, ''));
+};
+
+// تابع کمکی برای حذف جداکننده‌ها و واحد تومان از input و تبدیل به عدد
+const parsePriceInput = (value) => {
+  if (!value && value !== 0) return 0;
+  // حذف "تومان" و جداکننده‌ها
+  const cleaned = value.toString().replace(/تومان/g, '').replace(/,/g, '').trim();
+  return Number(cleaned) || 0;
 };
 
 // Helper to stringify attributes of a variation
@@ -72,6 +88,8 @@ const InvoiceEditPricingPage = () => {
   const navigate = useNavigate();
 
   const [form] = Form.useForm();
+  // Watch all form values for real-time calculation
+  const formValues = AntForm.useWatch([], form);
   const [inputSerial, setInputSerial] = useState("");
   const [addedSerials, setAddedSerials] = useState([]); // list of strings
   const serialSetRef = useRef(new Set());
@@ -818,15 +836,15 @@ const InvoiceEditPricingPage = () => {
     }
   };
 
-  // محاسبه مجموع قیمت
-  const calculateTotalPrice = () => {
-    const values = form.getFieldsValue();
+  // محاسبه مجموع قیمت (با استفاده از formValues برای real-time update)
+  const calculateTotalPrice = useMemo(() => {
+    const values = formValues || form.getFieldsValue();
     let total = 0;
     
     // CUT_FLOWER items
     for (const item of pricingItems.filter(i => i.pack_type === "CUT_FLOWER")) {
-      const unitPrice = parseNumber(values[`price_${item.id}`] || 0);
-      const deducted = Number(values[`deducted_${item.id}`] || 0);
+      const unitPrice = parseNumber(values?.[`price_${item.id}`] || 0);
+      const deducted = Number(values?.[`deducted_${item.id}`] || 0);
       const effectiveFlowers = item.flowers - deducted;
       total += unitPrice * effectiveFlowers;
     }
@@ -834,7 +852,7 @@ const InvoiceEditPricingPage = () => {
     // POTTED_PLANT items
     const pottedGroups = groupedByCartons.filter(g => g.type === 'potted_grouped');
     for (const group of pottedGroups) {
-      const unitPrice = parseNumber(values[`price_potted_${group.product_id}_${group.product_variation_id}`] || 0);
+      const unitPrice = parseNumber(values?.[`price_potted_${group.product_id}_${group.product_variation_id}`] || 0);
       total += unitPrice * group.total_pot_count;
     }
 
@@ -845,15 +863,14 @@ const InvoiceEditPricingPage = () => {
     }
 
     return total;
-  };
+  }, [formValues, pricingItems, groupedByCartons, singleStems, form]);
 
-  // محاسبه مجموع پس از اعمال تخفیف (در صورت وجود)
-  const calculateDiscountedTotal = () => {
-    const baseTotal = calculateTotalPrice();
-    const { discount_percent, discount_amount } = form.getFieldsValue([
-      "discount_percent",
-      "discount_amount",
-    ]);
+  // محاسبه مجموع پس از اعمال تخفیف (در صورت وجود) - real-time
+  const calculateDiscountedTotal = useMemo(() => {
+    const baseTotal = calculateTotalPrice;
+    const values = formValues || form.getFieldsValue();
+    const discount_percent = values?.discount_percent;
+    const discount_amount = values?.discount_amount;
 
     const hasPercent =
       discount_percent !== null &&
@@ -876,13 +893,45 @@ const InvoiceEditPricingPage = () => {
     }
 
     if (hasAmount) {
-      const a = Number(discount_amount) || 0;
+      const a = parsePriceInput(discount_amount) || Number(discount_amount) || 0;
       const discounted = baseTotal - a;
       return discounted >= 0 ? discounted : 0;
     }
 
     // بدون تخفیف
     return baseTotal;
+  }, [calculateTotalPrice, formValues, form]);
+
+  // بررسی اینکه آیا تمام قیمت‌ها پر شده‌اند
+  const validateAllPricesFilled = () => {
+    const values = form.getFieldsValue();
+    const missingPrices = [];
+
+    // بررسی CUT_FLOWER items
+    for (const item of pricingItems.filter(i => i.pack_type === "CUT_FLOWER")) {
+      const price = values[`price_${item.id}`];
+      if (!price || parseNumber(price) === 0) {
+        missingPrices.push(`قیمت واحد برای ${item.variants_data?.title || 'آیتم'}`);
+      }
+    }
+
+    // بررسی POTTED_PLANT items
+    const pottedGroups = groupedByCartons.filter(g => g.type === 'potted_grouped');
+    for (const group of pottedGroups) {
+      const price = values[`price_potted_${group.product_id}_${group.product_variation_id}`];
+      if (!price || parseNumber(price) === 0) {
+        missingPrices.push(`قیمت واحد برای گروه گلدانی`);
+      }
+    }
+
+    // بررسی Single stems
+    for (const stem of singleStems) {
+      if (!stem.unit_price || stem.unit_price === 0) {
+        missingPrices.push(`قیمت واحد برای فروش شاخه‌ای`);
+      }
+    }
+
+    return missingPrices;
   };
 
   // ساخت ops برای به‌روزرسانی
@@ -1136,6 +1185,13 @@ const InvoiceEditPricingPage = () => {
     try {
       const values = form.getFieldsValue();
 
+      // اعتبارسنجی: بررسی اینکه تمام قیمت‌ها پر شده باشند
+      const missingPrices = validateAllPricesFilled();
+      if (missingPrices.length > 0) {
+        message.error(`لطفاً تمام قیمت‌ها را وارد کنید. موارد ناقص: ${missingPrices.join('، ')}`);
+        return;
+      }
+
       // ولیدیشن تخفیف: یا درصد یا مبلغ، یا هیچ‌کدام؛ نه هر دو
       const discountPercentRaw = values.discount_percent;
       const discountAmountRaw = values.discount_amount;
@@ -1358,7 +1414,13 @@ const InvoiceEditPricingPage = () => {
                               name={`price_${item.id}`}
                               rules={[{ required: true, message: 'لطفاً قیمت واحد را وارد کنید' }]}
                             >
-                              <Input placeholder="مثلاً 12,000" />
+                              <InputNumber
+                                min={0}
+                                style={{ width: "100%" }}
+                                placeholder="مثلاً 12,000"
+                                formatter={(value) => formatPriceInput(value)}
+                                parser={(value) => parsePriceInput(value)}
+                              />
                             </Form.Item>
                           </Col>
                           <Col span={12}>
@@ -1550,7 +1612,13 @@ const InvoiceEditPricingPage = () => {
                             name={`price_potted_${record.product_id}_${record.product_variation_id}`}
                             style={{ marginBottom: 0 }}
                           >
-                            <Input placeholder="مثلاً 12,000" />
+                            <InputNumber
+                              min={0}
+                              style={{ width: "100%" }}
+                              placeholder="مثلاً 12,000"
+                              formatter={(value) => formatPriceInput(value)}
+                              parser={(value) => parsePriceInput(value)}
+                            />
                           </Form.Item>
                         ),
                       },
@@ -1651,20 +1719,61 @@ const InvoiceEditPricingPage = () => {
                   marginBottom: 16,
                 }}
               >
-                {/* مبلغ کل (total_amount) */}
+                {/* مجموع قیمت‌های فعلی (real-time) */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 8,
+                  }}
+                >
+                  <Text strong style={{ fontSize: 16 }}>
+                    مجموع قیمت:
+                  </Text>
+                  <Text strong style={{ fontSize: 18, color: "#1677ff" }}>
+                    {formatNumber(calculateTotalPrice)} تومان
+                  </Text>
+                </div>
+                {/* نمایش مجموع پس از تخفیف (real-time) */}
+                {(() => {
+                  const discounted = calculateDiscountedTotal;
+                  const base = calculateTotalPrice;
+                  if (discounted === null || discounted === base) return null;
+                  return (
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginTop: 4,
+                      }}
+                    >
+                      <Text type="secondary" style={{ fontSize: 14 }}>
+                        مجموع پس از تخفیف:
+                      </Text>
+                      <Text strong style={{ fontSize: 18, color: "#52c41a" }}>
+                        {formatNumber(discounted)} تومان
+                      </Text>
+                    </div>
+                  );
+                })()}
+                {/* مبلغ کل اولیه (total_amount) - فقط برای نمایش */}
                 {invoiceTotalAmount !== null && (
                   <div
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      marginBottom: 8,
+                      marginTop: 8,
+                      paddingTop: 8,
+                      borderTop: "1px solid #d9d9d9",
                     }}
                   >
-                    <Text strong style={{ fontSize: 16 }}>
-                      مبلغ کل:
+                    <Text type="secondary" style={{ fontSize: 14 }}>
+                      مبلغ کل اولیه:
                     </Text>
-                    <Text strong style={{ fontSize: 18, color: "#1677ff" }}>
+                    <Text type="secondary" style={{ fontSize: 14 }}>
                       {formatNumber(invoiceTotalAmount)} تومان
                     </Text>
                   </div>
@@ -1727,10 +1836,18 @@ const InvoiceEditPricingPage = () => {
                   <Form.Item label="مبلغ تخفیف (تومان)" name="discount_amount">
                     <InputNumber
                       min={0}
+                      max={calculateTotalPrice}
                       style={{ width: "100%" }}
                       placeholder="مثلاً 100000"
+                      formatter={(value) => formatPriceInput(value)}
+                      parser={(value) => parsePriceInput(value)}
                     />
                   </Form.Item>
+                  {formValues?.discount_amount && calculateTotalPrice > 0 && (
+                    <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 4 }}>
+                      حداکثر: {formatNumber(calculateTotalPrice)} تومان
+                    </div>
+                  )}
                 </Col>
               </Row>
             </Col>
@@ -1939,7 +2056,13 @@ const InvoiceEditPricingPage = () => {
             name="unit_price"
             rules={[{ required: true, message: "لطفاً قیمت را وارد کنید" }]}
           >
-            <InputNumber min={0} style={{ width: "100%" }} placeholder="مثلاً 5000" />
+            <InputNumber
+              min={0}
+              style={{ width: "100%" }}
+              placeholder="مثلاً 5000"
+              formatter={(value) => formatNumber(value)}
+              parser={(value) => parseNumber(value)}
+            />
           </Form.Item>
 
           <Form.List name="cartons">

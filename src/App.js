@@ -92,11 +92,13 @@ import CustomerShow from "./pages/customer/CustomerShow";
 import RequirePermission from "./components/RequirePermission";
 import FirstAllowedRedirect from "./components/FirstAllowedRedirect";
 import AuthValidator from "./components/AuthValidator";
+import NetworkStatus from "./components/NetworkStatus";
 
 function App() {
   return (
     <ThemeProvider>
       <UserProvider>
+        <NetworkStatus />
         <Router>
           <Routes>
             <Route path="/login" element={<Login />} />
