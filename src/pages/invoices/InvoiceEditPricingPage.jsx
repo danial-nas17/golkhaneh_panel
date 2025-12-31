@@ -93,6 +93,7 @@ const InvoiceEditPricingPage = () => {
   const [inputSerial, setInputSerial] = useState("");
   const [addedSerials, setAddedSerials] = useState([]); // list of strings
   const serialSetRef = useRef(new Set());
+  const inputSerialRef = useRef(null); // ref for input field
   const [rawItems, setRawItems] = useState([]); // list of lookup data blocks
   const [loadingAdd, setLoadingAdd] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -526,6 +527,10 @@ const InvoiceEditPricingPage = () => {
         if (serialSetRef.current.has(s)) {
           message.warning(`سریال ${s} قبلاً اضافه شده است`);
         }
+        // بازگرداندن focus به input حتی در صورت خطا
+        setTimeout(() => {
+          inputSerialRef.current?.focus();
+        }, 100);
         return;
       }
       try {
@@ -533,6 +538,10 @@ const InvoiceEditPricingPage = () => {
         const lookupData = await lookupSerial({ invoiceId: id, serial: s });
         if (!lookupData) {
           message.error("پاسخ نامعتبر از سرور");
+          // بازگرداندن focus به input
+          setTimeout(() => {
+            inputSerialRef.current?.focus();
+          }, 100);
           return;
         }
         // علامت‌گذاری به عنوان آیتم جدید
@@ -541,6 +550,10 @@ const InvoiceEditPricingPage = () => {
         setAddedSerials((prev) => [s, ...prev]);
         setRawItems((prev) => [...prev, lookupData]);
         message.success(`سریال ${s} اضافه شد`);
+        // بازگرداندن focus به input بعد از موفقیت
+        setTimeout(() => {
+          inputSerialRef.current?.focus();
+        }, 100);
       } catch (error) {
         const errorResult = UnifiedErrorHandler.handleApiError(error, form, {
           showValidationMessages: true,
@@ -548,6 +561,10 @@ const InvoiceEditPricingPage = () => {
           defaultMessage: "خطا در افزودن سریال",
         });
         message.error(errorResult.message);
+        // بازگرداندن focus به input حتی در صورت خطا
+        setTimeout(() => {
+          inputSerialRef.current?.focus();
+        }, 100);
       } finally {
         setLoadingAdd(false);
       }
@@ -1286,6 +1303,7 @@ const InvoiceEditPricingPage = () => {
       <Card style={{ marginBottom: 16 }} title="افزودن سریال کارتن یا گلدان">
         <Space.Compact style={{ width: "100%" }}>
           <Input
+            ref={inputSerialRef}
             placeholder="سریال را وارد کنید"
             value={inputSerial}
             onChange={(e) => setInputSerial(e.target.value)}
@@ -1294,6 +1312,7 @@ const InvoiceEditPricingPage = () => {
               setInputSerial("");
             }}
             disabled={loadingAdd}
+            autoFocus
           />
           <Button type="primary" onClick={() => { addSerial(inputSerial); setInputSerial(""); }} loading={loadingAdd}>
             افزودن
